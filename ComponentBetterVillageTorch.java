@@ -11,7 +11,9 @@ import net.minecraft.world.gen.structure.StructureBoundingBox;
 
 public class ComponentBetterVillageTorch extends ComponentVillageTorch{
 
-	private int averageGroundLevel = -1;
+	public ComponentBetterVillageTorch(){
+	}
+	
 	public ComponentBetterVillageTorch(ComponentVillageStartPiece par1ComponentVillageStartPiece,
 			int par2, Random par3Random, StructureBoundingBox par4StructureBoundingBox, int par5) {
 		super(par1ComponentVillageStartPiece, par2, par3Random,
@@ -33,16 +35,16 @@ public class ComponentBetterVillageTorch extends ComponentVillageTorch{
 	@Override
 	public boolean addComponentParts(World par1World, Random par2Random, StructureBoundingBox par3StructureBoundingBox)
 	{
-	    if (this.averageGroundLevel < 0)
+	    if (this.field_143015_k < 0)
 	    {
-	        this.averageGroundLevel = this.getAverageGroundLevel(par1World, par3StructureBoundingBox);
+	        this.field_143015_k = this.getAverageGroundLevel(par1World, par3StructureBoundingBox);
 	
-	        if (this.averageGroundLevel < 0)
+	        if (this.field_143015_k < 0)
 	        {
 	            return true;
 	        }
 	
-	        this.boundingBox.offset(0, this.averageGroundLevel - this.boundingBox.maxY + 4 - 1, 0);
+	        this.boundingBox.offset(0, this.field_143015_k - this.boundingBox.maxY + 4 - 1, 0);
 	    }
 	
 	    //NetherFenceAndGlowstone

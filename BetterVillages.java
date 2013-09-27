@@ -11,22 +11,24 @@ import net.minecraft.util.MathHelper;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.BiomeGenBase;
 import net.minecraft.world.gen.structure.ComponentVillageStartPiece;
+import net.minecraft.world.gen.structure.ComponentVillageTorch;
+import net.minecraft.world.gen.structure.MapGenStructureIO;
 import net.minecraft.world.gen.structure.StructureVillagePieceWeight;
 import net.minecraftforge.common.BiomeManager;
 import net.minecraftforge.common.Configuration;
+import net.minecraftforge.common.ForgeVersion;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.Event.Result;
 import net.minecraftforge.event.ForgeSubscribe;
-import net.minecraftforge.event.terraingen.BiomeEvent;
-import net.minecraftforge.event.terraingen.PopulateChunkEvent;
 import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.Mod.EventHandler;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.common.registry.VillagerRegistry;
 import cpw.mods.fml.common.registry.VillagerRegistry.IVillageCreationHandler;
+import cpw.mods.fml.relauncher.Side;
 
-@Mod(modid="bettervillages",name="Better Villages Mod",version="0.1")
+@Mod(modid="bettervillages",name="Better Villages Mod",version="0.2")
 public class BetterVillages implements IVillageCreationHandler{
 
 	public static final int FLAG_ID= Block.planks.blockID;
@@ -71,13 +73,17 @@ public class BetterVillages implements IVillageCreationHandler{
 				}
 			}
 		}
-		MinecraftForge.EVENT_BUS.register(this);
-		MinecraftForge.TERRAIN_GEN_BUS.register(this);
-		if(torch)
+		if(ForgeVersion.buildVersion>=891||event.getSide().isClient()){
+			MinecraftForge.EVENT_BUS.register(this);
+			MinecraftForge.TERRAIN_GEN_BUS.register(this);
+		}
+		if(torch){
+			MapGenStructureIO.func_143031_a(ComponentBetterVillageTorch.class, "BViT");
 			VillagerRegistry.instance().registerVillageCreationHandler(this);
+		}
 	}
 	@ForgeSubscribe
-	public void onSettingGravel(BiomeEvent.GetVillageBlockID event){
+	public void onSettingGravel(net.minecraftforge.event.terraingen.BiomeEvent.GetVillageBlockID event){
 		if(event.biome==BiomeGenBase.ocean && event.original==Block.gravel.blockID){
 			event.replacement=FLAG_ID;//flag used to reconstruct pathway afterward
 			event.setResult(Result.DENY);
@@ -85,7 +91,7 @@ public class BetterVillages implements IVillageCreationHandler{
 			
 	}
 	@ForgeSubscribe
-	public void onPopulating(PopulateChunkEvent.Post event){
+	public void onPopulating(net.minecraftforge.event.terraingen.PopulateChunkEvent.Post event){
 		if(event.hasVillageGenerated){
 			int i = event.chunkX*16;
 			int k = event.chunkZ*16;
@@ -235,6 +241,8 @@ public class BetterVillages implements IVillageCreationHandler{
 	}
 	private static boolean isCorner(World world, int id, int[] pos) {
 		List<int[]> list = getBorder(world,id,pos);
+		if(list.size()<2)
+			return false;
 		int[] a = list.get(0);
 		int[] b = list.get(1);
 		return a[0]!=b[0] && a[2]!=b[2];
