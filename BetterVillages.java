@@ -220,14 +220,14 @@ public class BetterVillages implements IVillageCreationHandler{
 							}
 							continue;
 						}
-						if(woodHut && id==Block.wood.blockID){//Found top
+						if(woodHut && id==borderId){//Found top
 							do{
 								y--;
 								id=event.world.getBlockId(x, y, z);
 							}
 							while(id==0||!Block.blocksList[id].isOpaqueCube());
 							if(id==Block.dirt.blockID){//Found dirt floor
-								event.world.setBlock(x, y, z, Block.wood.blockID);
+								event.world.setBlock(x, y, z, borderId);
 								list = getBorder(event.world,Block.cobblestone.blockID,new int[]{x,y,z});
 								for(int[] pos:list){
 									event.world.setBlock(pos[0], pos[1], pos[2], Block.stone.blockID);
