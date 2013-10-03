@@ -11,7 +11,6 @@ import net.minecraft.util.MathHelper;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.BiomeGenBase;
 import net.minecraft.world.gen.structure.ComponentVillageStartPiece;
-import net.minecraft.world.gen.structure.ComponentVillageTorch;
 import net.minecraft.world.gen.structure.MapGenStructureIO;
 import net.minecraft.world.gen.structure.StructureVillagePieceWeight;
 import net.minecraftforge.common.BiomeManager;
@@ -26,7 +25,6 @@ import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.common.registry.VillagerRegistry;
 import cpw.mods.fml.common.registry.VillagerRegistry.IVillageCreationHandler;
-import cpw.mods.fml.relauncher.Side;
 
 @Mod(modid="bettervillages",name="Better Villages Mod",version="0.2")
 public class BetterVillages implements IVillageCreationHandler{
