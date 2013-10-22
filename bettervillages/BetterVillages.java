@@ -3,16 +3,21 @@ package bettervillages;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Random;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
-import net.minecraft.util.MathHelper;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.BiomeGenBase;
-import net.minecraft.world.gen.structure.ComponentVillageStartPiece;
+import net.minecraft.world.gen.structure.ComponentVillageChurch;
+import net.minecraft.world.gen.structure.ComponentVillageField;
+import net.minecraft.world.gen.structure.ComponentVillageField2;
+import net.minecraft.world.gen.structure.ComponentVillageHall;
+import net.minecraft.world.gen.structure.ComponentVillageHouse1;
+import net.minecraft.world.gen.structure.ComponentVillageHouse2;
+import net.minecraft.world.gen.structure.ComponentVillageHouse3;
+import net.minecraft.world.gen.structure.ComponentVillageHouse4_Garden;
+import net.minecraft.world.gen.structure.ComponentVillageWoodHut;
 import net.minecraft.world.gen.structure.MapGenStructureIO;
-import net.minecraft.world.gen.structure.StructureVillagePieceWeight;
 import net.minecraftforge.common.BiomeManager;
 import net.minecraftforge.common.Configuration;
 import net.minecraftforge.common.ForgeVersion;
@@ -27,18 +32,25 @@ import cpw.mods.fml.common.registry.VillagerRegistry;
 import cpw.mods.fml.common.registry.VillagerRegistry.IVillageCreationHandler;
 
 @Mod(modid = "bettervillages", name = "Better Villages Mod", version = "0.2")
-public class BetterVillages implements IVillageCreationHandler {
+public class BetterVillages {
 	public static final int FLAG_ID = Block.planks.blockID;
 	public static int pathWay = Block.planks.blockID, fieldFence = Block.fence.blockID;
-	public static boolean lilies = true, fields = true, gates = true, wells = true, woodHut = true, torch = true;
+	public static boolean lilies = true, fields = true, gates = true, wells = true, woodHut = true, torch = true, big = true;
 	public static String[] biomeNames = new String[] { BiomeGenBase.desertHills.biomeName, BiomeGenBase.extremeHills.biomeName, BiomeGenBase.extremeHillsEdge.biomeName, BiomeGenBase.jungle.biomeName,
-		BiomeGenBase.jungleHills.biomeName, BiomeGenBase.ocean.biomeName, BiomeGenBase.swampland.biomeName, BiomeGenBase.taiga.biomeName, BiomeGenBase.taigaHills.biomeName,
-		BiomeGenBase.icePlains.biomeName, BiomeGenBase.iceMountains.biomeName, BiomeGenBase.forest.biomeName };
+			BiomeGenBase.jungleHills.biomeName, BiomeGenBase.ocean.biomeName, BiomeGenBase.swampland.biomeName, BiomeGenBase.taiga.biomeName, BiomeGenBase.taigaHills.biomeName,
+			BiomeGenBase.icePlains.biomeName, BiomeGenBase.iceMountains.biomeName, BiomeGenBase.forest.biomeName };
 	public static List<String> villageSpawnBiomes;
-
-	@Override
-	public Object buildComponent(StructureVillagePieceWeight villagePiece, ComponentVillageStartPiece startPiece, List pieces, Random random, int p1, int p2, int p3, int p4, int p5) {
-		return ComponentBetterVillageTorch.getTorch(startPiece, pieces, random, p1, p2, p3, p4, p5);
+	public static List<IVillageCreationHandler> handlers = new ArrayList();
+	static {
+		handlers.add(new VillageCreationHandler(ComponentVillageHouse4_Garden.class, 4, 2, 4, 2));
+		handlers.add(new VillageCreationHandler(ComponentVillageChurch.class, 20, 0, 1, 1));
+		handlers.add(new VillageCreationHandler(ComponentVillageHouse1.class, 20, 0, 2, 1));
+		handlers.add(new VillageCreationHandler(ComponentVillageWoodHut.class, 3, 2, 5, 3));
+		handlers.add(new VillageCreationHandler(ComponentVillageHall.class, 15, 0, 2, 1));
+		handlers.add(new VillageCreationHandler(ComponentVillageField.class, 3, 1, 4, 1));
+		handlers.add(new VillageCreationHandler(ComponentVillageField2.class, 3, 2, 4, 2));
+		handlers.add(new VillageCreationHandler(ComponentVillageHouse2.class, 15, 0, 1, 1));
+		handlers.add(new VillageCreationHandler(ComponentVillageHouse3.class, 8, 0, 3, 2));
 	}
 
 	@EventHandler
@@ -53,18 +65,9 @@ public class BetterVillages implements IVillageCreationHandler {
 		woodHut = config.get("general", "Decorate_huts", woodHut, "Village wood huts should be improved").getBoolean(woodHut);
 		gates = config.get("general", "Add_gates", gates, "Fence gates added to village fields").getBoolean(gates);
 		torch = config.get("general", "Add_new_torch", torch, "Better torch has a chance to appear in villages").getBoolean(torch);
+		big = config.get("general", "Bigger_Villages", big, "Villages generates in clusters").getBoolean(big);
 		if (config.hasChanged())
 			config.save();
-	}
-
-	@Override
-	public Class<?> getComponentClass() {
-		return ComponentBetterVillageTorch.class;
-	}
-
-	@Override
-	public StructureVillagePieceWeight getVillagePieceWeight(Random random, int i) {
-		return new BetterStructureVillagePieceWeight(ComponentBetterVillageTorch.class, 15, MathHelper.getRandomIntegerInRange(random, 0, 1 + i));
 	}
 
 	@EventHandler
@@ -81,10 +84,15 @@ public class BetterVillages implements IVillageCreationHandler {
 			MinecraftForge.TERRAIN_GEN_BUS.register(this);
 		}
 		if (torch) {
-			if (ForgeVersion.buildVersion >= 861){
+			if (ForgeVersion.buildVersion >= 861) {
 				MapGenStructureIO.func_143031_a(ComponentBetterVillageTorch.class, "BViT");
 			}
-			VillagerRegistry.instance().registerVillageCreationHandler(this);
+			VillagerRegistry.instance().registerVillageCreationHandler(new VillageCreationHandler(ComponentBetterVillageTorch.class, 15, 0, 1, 1));
+		}
+		if (big) {
+			for (IVillageCreationHandler handler : handlers) {
+				VillagerRegistry.instance().registerVillageCreationHandler(handler);
+			}
 		}
 	}
 
