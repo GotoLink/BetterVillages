@@ -28,10 +28,13 @@ public class VillageCreationHandler implements IVillageCreationHandler {
 		Method[] meths = villagePiece.villagePieceClass.getDeclaredMethods();
 		Object obj = null;
 		for (Method meth : meths) {
-			if (meth.isAccessible() && Modifier.isStatic(meth.getModifiers()) && ComponentVillage.class.isInstance(meth.getReturnType())) {
+			int mod = meth.getModifiers();
+			if (Modifier.isPublic(mod) && Modifier.isStatic(mod)) {
 				try {
 					obj = meth.invoke(null, startPiece, pieces, random, p1, p2, p3, p4, p5);
-					break;
+					if (ComponentVillage.class.isInstance(obj)) {
+						break;
+					}
 				} catch (ReflectiveOperationException e) {
 					e.printStackTrace();
 				}
