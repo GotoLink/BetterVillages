@@ -24,6 +24,7 @@ import net.minecraftforge.common.ForgeVersion;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.Event.Result;
 import net.minecraftforge.event.ForgeSubscribe;
+import net.minecraftforge.event.terraingen.PopulateChunkEvent.Post;
 import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.Mod.EventHandler;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
@@ -97,7 +98,7 @@ public class BetterVillages {
 	}
 
 	@ForgeSubscribe
-	public void onPopulating(net.minecraftforge.event.terraingen.PopulateChunkEvent.Post event) {
+	public void onPopulating(Post event) {
 		if (event.hasVillageGenerated) {
 			int i = event.chunkX * 16;
 			int k = event.chunkZ * 16;
@@ -125,7 +126,7 @@ public class BetterVillages {
 						if (id == FLAG_ID) {//Use flag
 							id = event.world.getBlockId(x, y + 1, z);
 							if (isWaterId(id)) {
-								event.world.setBlock(x, y, z, id);//destroy flag
+								event.world.setBlock(x, y, z, id, 0, 2);//destroy flag
 								while (event.world.getBlockId(x, y, z) != 0)
 									y++;
 								event.world.setBlock(x, y, z, pathWay);//rebuilt pathway
@@ -139,7 +140,7 @@ public class BetterVillages {
 						id = event.world.getBlockId(x, y, z);
 						if (isWaterId(id)) {//found water in open air
 							if (lilies && event.world.isAirBlock(x, y + 1, z) && event.rand.nextInt(10) == 0)
-								event.world.setBlock(x, y + 1, z, Block.waterlily.blockID);//place waterlily randomly
+								event.world.setBlock(x, y + 1, z, Block.waterlily.blockID, 0, 2);//place waterlily randomly
 							if (gates) {
 								field = new int[] { x, y, z };
 								list = getBorder(event.world, id, field);
@@ -171,20 +172,20 @@ public class BetterVillages {
 								case 3://simple border case
 									field = list.get(1);//get middle border block
 									if (isReplaceable(event.world, field[0], field[1] + 1, field[2]))
-										event.world.setBlock(field[0], field[1] + 1, field[2], fieldFence);//place fence
+										event.world.setBlock(field[0], field[1] + 1, field[2], fieldFence, 0, 2);//place fence
 									break;
 								case 5://corner case
 									field = list.remove(1);
 									if (isReplaceable(event.world, field[0], field[1] + 1, field[2]))
-										event.world.setBlock(field[0], field[1] + 1, field[2], fieldFence);
+										event.world.setBlock(field[0], field[1] + 1, field[2], fieldFence, 0, 2);
 									field = list.remove(2);
 									if (isReplaceable(event.world, field[0], field[1] + 1, field[2]))
-										event.world.setBlock(field[0], field[1] + 1, field[2], fieldFence);
+										event.world.setBlock(field[0], field[1] + 1, field[2], fieldFence, 0, 2);
 									for (int[] pos : list) {
 										if (isReplaceable(event.world, pos[0], pos[1] + 1, pos[2])) {
-											event.world.setBlock(pos[0], pos[1] + 1, pos[2], fieldFence);
+											event.world.setBlock(pos[0], pos[1] + 1, pos[2], fieldFence, 0, 2);
 											if (isReplaceable(event.world, pos[0], pos[1] + 2, pos[2]) && isCorner(event.world, borderId, pos))
-												event.world.setBlock(pos[0], pos[1] + 2, pos[2], Block.torchWood.blockID);
+												event.world.setBlock(pos[0], pos[1] + 2, pos[2], Block.torchWood.blockID, 0, 2);
 										}
 									}
 									break;
@@ -205,12 +206,12 @@ public class BetterVillages {
 									list = getBorder(event.world, Block.cobblestone.blockID, field);
 									if (list.size() == 5) {//found 5 cobblestone surrounding one water block, assuming this is a village well
 										field = list.remove(1);
-										event.world.setBlock(field[0], field[1] + 1, field[2], Block.stoneSingleSlab.blockID);
+										event.world.setBlock(field[0], field[1] + 1, field[2], Block.stoneSingleSlab.blockID, 0, 2);
 										field = list.remove(2);
-										event.world.setBlock(field[0], field[1] + 1, field[2], Block.stoneSingleSlab.blockID);
+										event.world.setBlock(field[0], field[1] + 1, field[2], Block.stoneSingleSlab.blockID, 0, 2);
 										for (int[] pos : list) {
 											for (int[] posb : getBorder(event.world, Block.gravel.blockID, pos))
-												event.world.setBlock(posb[0], posb[1], posb[2], Block.stoneSingleSlab.blockID);
+												event.world.setBlock(posb[0], posb[1], posb[2], Block.stoneSingleSlab.blockID, 0, 2);
 										}
 										while (event.world.getBlockId(x, y, z) == id) {
 											y--;
@@ -218,8 +219,8 @@ public class BetterVillages {
 										field = new int[] { x, y, z };
 										list = getBorder(event.world, Block.cobblestone.blockID, field);
 										for (int[] pos : list)
-											event.world.setBlock(pos[0], pos[1], pos[2], Block.blockIron.blockID);
-										event.world.setBlock(field[0], field[1], field[2], Block.blockIron.blockID);
+											event.world.setBlock(pos[0], pos[1], pos[2], Block.blockIron.blockID, 0, 2);
+										event.world.setBlock(field[0], field[1], field[2], Block.blockIron.blockID, 0, 2);
 									}
 								}
 							}
@@ -234,7 +235,7 @@ public class BetterVillages {
 								event.world.setBlock(x, y, z, borderId);
 								list = getBorder(event.world, Block.cobblestone.blockID, new int[] { x, y, z });
 								for (int[] pos : list) {
-									event.world.setBlock(pos[0], pos[1], pos[2], Block.stone.blockID);
+									event.world.setBlock(pos[0], pos[1], pos[2], Block.stone.blockID, 0, 2);
 								}
 							}
 						}
