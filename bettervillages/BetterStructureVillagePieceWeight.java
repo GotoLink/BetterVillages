@@ -3,7 +3,7 @@ package bettervillages;
 import net.minecraft.world.gen.structure.StructureVillagePieceWeight;
 
 public class BetterStructureVillagePieceWeight extends StructureVillagePieceWeight {
-	public BetterStructureVillagePieceWeight(Class par1Class, int par2, int par3) {
+	public BetterStructureVillagePieceWeight(Class<?> par1Class, int par2, int par3) {
 		super(par1Class, par2, par3);
 	}
 

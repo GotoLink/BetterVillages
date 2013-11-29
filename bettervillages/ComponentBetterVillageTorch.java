@@ -35,7 +35,7 @@ public class ComponentBetterVillageTorch extends ComponentVillageTorch {
 		return true;
 	}
 
-	public static ComponentBetterVillageTorch getTorch(ComponentVillageStartPiece startPiece, List pieces, Random random, int p1, int p2, int p3, int p4, int p5) {
+	public static ComponentBetterVillageTorch getTorch(ComponentVillageStartPiece startPiece, List<?> pieces, Random random, int p1, int p2, int p3, int p4, int p5) {
 		StructureBoundingBox structureboundingbox = func_74904_a(startPiece, pieces, random, p1, p2, p3, p4);
 		if (structureboundingbox != null) {
 			return new ComponentBetterVillageTorch(startPiece, p5, random, structureboundingbox, p4);

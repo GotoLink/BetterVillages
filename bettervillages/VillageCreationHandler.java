@@ -14,11 +14,11 @@ import net.minecraft.world.gen.structure.StructureVillagePieceWeight;
 import cpw.mods.fml.common.registry.VillagerRegistry.IVillageCreationHandler;
 
 public class VillageCreationHandler implements IVillageCreationHandler {
-	private Class piece;
+	private Class<?> piece;
 	private int weight, min, max, multiplier;
-	private static Map<String, Method> methMap = new HashMap();
+	private static Map<String, Method> methMap = new HashMap<String, Method>();
 
-	public VillageCreationHandler(Class structure, int data, int min, int max, int multi) {
+	public VillageCreationHandler(Class<?> structure, int data, int min, int max, int multi) {
 		this.piece = structure;
 		this.weight = data;
 		this.min = min;
@@ -28,7 +28,7 @@ public class VillageCreationHandler implements IVillageCreationHandler {
 
 	@Override
 	public Object buildComponent(StructureVillagePieceWeight villagePiece, ComponentVillageStartPiece startPiece, List pieces, Random random, int p1, int p2, int p3, int p4, int p5) {
-		Class clazz = villagePiece.villagePieceClass;
+		Class<?> clazz = villagePiece.villagePieceClass;
 		Object obj = null;
 		if (!methMap.containsKey(clazz.getName())) {
 			Method[] meths = clazz.getDeclaredMethods();

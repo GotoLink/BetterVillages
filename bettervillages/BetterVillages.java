@@ -41,7 +41,7 @@ public class BetterVillages {
 			BiomeGenBase.jungleHills.biomeName, BiomeGenBase.ocean.biomeName, BiomeGenBase.swampland.biomeName, BiomeGenBase.taiga.biomeName, BiomeGenBase.taigaHills.biomeName,
 			BiomeGenBase.icePlains.biomeName, BiomeGenBase.iceMountains.biomeName, BiomeGenBase.forest.biomeName };
 	public static List<String> villageSpawnBiomes;
-	public static List<IVillageCreationHandler> handlers = new ArrayList();
+	public static List<IVillageCreationHandler> handlers = new ArrayList<IVillageCreationHandler>();
 	static {
 		handlers.add(new VillageCreationHandler(ComponentVillageHouse4_Garden.class, 4, 2, 4, 2));
 		handlers.add(new VillageCreationHandler(ComponentVillageChurch.class, 20, 0, 1, 1));
@@ -254,7 +254,7 @@ public class BetterVillages {
 	}
 
 	private static List<int[]> getBorder(World world, int id, int[] field) {
-		List<int[]> list = new ArrayList();
+		List<int[]> list = new ArrayList<int[]>();
 		for (int x = field[0] - 1; x < field[0] + 2; x++) {
 			for (int z = field[2] - 1; z < field[2] + 2; z++) {
 				if ((x != field[0] || z != field[2]) && world.getBlockId(x, field[1], z) == id)
