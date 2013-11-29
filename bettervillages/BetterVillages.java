@@ -71,7 +71,8 @@ public class BetterVillages {
 			config.save();
 	}
 
-	@EventHandler
+    @SuppressWarnings("unused")
+    @EventHandler
 	public void load(FMLInitializationEvent event) {
 		if (villageSpawnBiomes != null && !villageSpawnBiomes.isEmpty()) {
 			for (BiomeGenBase biome : BiomeGenBase.biomeList) {
