@@ -80,10 +80,10 @@ public class BetterVillages {
 				}
 			}
 		}
-		if (ForgeVersion.buildVersion >= 891 || event.getSide().isClient()) {
+		//if (ForgeVersion.buildVersion >= 891 || event.getSide().isClient()) {
 			MinecraftForge.EVENT_BUS.register(this);
 			MinecraftForge.TERRAIN_GEN_BUS.register(this);
-		}
+		//}
 		if (torch) {
 			if (ForgeVersion.buildVersion >= 861) {
 				MapGenStructureIO.func_143031_a(ComponentBetterVillageTorch.class, "BViT");

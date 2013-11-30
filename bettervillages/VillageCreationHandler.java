@@ -27,7 +27,7 @@ public class VillageCreationHandler implements IVillageCreationHandler {
 	}
 
 	@Override
-	public Object buildComponent(StructureVillagePieceWeight villagePiece, ComponentVillageStartPiece startPiece, List pieces, Random random, int p1, int p2, int p3, int p4, int p5) {
+	public Object buildComponent(StructureVillagePieceWeight villagePiece, ComponentVillageStartPiece startPiece, @SuppressWarnings("rawtypes") List pieces, Random random, int p1, int p2, int p3, int p4, int p5) {
 		Class<?> clazz = villagePiece.villagePieceClass;
 		Object obj = null;
 		if (!methMap.containsKey(clazz.getName())) {
