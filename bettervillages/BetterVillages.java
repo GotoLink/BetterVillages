@@ -81,8 +81,8 @@ public class BetterVillages {
 			}
 		}
 		//if (ForgeVersion.buildVersion >= 891 || event.getSide().isClient()) {
-			MinecraftForge.EVENT_BUS.register(this);
-			MinecraftForge.TERRAIN_GEN_BUS.register(this);
+		MinecraftForge.EVENT_BUS.register(this);
+		MinecraftForge.TERRAIN_GEN_BUS.register(this);
 		//}
 		if (torch) {
 			if (ForgeVersion.buildVersion >= 861) {
@@ -138,6 +138,10 @@ public class BetterVillages {
 					if (y > 1) {
 						y--;
 						id = event.world.getBlockId(x, y, z);
+						while (Block.blocksList[id] == null || Block.blocksList[id].isLeaves(event.world, x, y, z)) {
+							y--;
+							id = event.world.getBlockId(x, y, z);
+						}
 						if (isWaterId(id)) {//found water in open air
 							if (lilies && event.world.isAirBlock(x, y + 1, z) && event.rand.nextInt(10) == 0)
 								event.world.setBlock(x, y + 1, z, Block.waterlily.blockID, 0, 2);//place waterlily randomly
