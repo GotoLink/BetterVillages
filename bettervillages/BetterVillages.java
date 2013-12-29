@@ -32,8 +32,9 @@ import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.common.registry.VillagerRegistry;
 import cpw.mods.fml.common.registry.VillagerRegistry.IVillageCreationHandler;
 
-@Mod(modid = "bettervillages", name = "Better Villages Mod", version = "0.2")
+@Mod(modid = "bettervillages", name = "Better Villages Mod", version = BetterVillages.VERSION)
 public class BetterVillages {
+    public static final String VERSION = "0.2";
 	public static final int FLAG_ID = Block.planks.blockID;
 	public static int pathWay = Block.planks.blockID, fieldFence = Block.fence.blockID;
 	public static boolean lilies = true, fields = true, gates = true, wells = true, woodHut = true, torch = true, big = true;
