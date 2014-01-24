@@ -1,29 +1,23 @@
 package bettervillages;
 
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
+import net.minecraft.init.Blocks;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.BiomeGenBase;
-import net.minecraft.world.gen.structure.ComponentVillageChurch;
-import net.minecraft.world.gen.structure.ComponentVillageField;
-import net.minecraft.world.gen.structure.ComponentVillageField2;
-import net.minecraft.world.gen.structure.ComponentVillageHall;
-import net.minecraft.world.gen.structure.ComponentVillageHouse1;
-import net.minecraft.world.gen.structure.ComponentVillageHouse2;
-import net.minecraft.world.gen.structure.ComponentVillageHouse3;
-import net.minecraft.world.gen.structure.ComponentVillageHouse4_Garden;
-import net.minecraft.world.gen.structure.ComponentVillageWoodHut;
 import net.minecraft.world.gen.structure.MapGenStructureIO;
+import net.minecraft.world.gen.structure.StructureVillagePieces;
 import net.minecraftforge.common.BiomeManager;
-import net.minecraftforge.common.Configuration;
-import net.minecraftforge.common.ForgeVersion;
+import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.Event.Result;
-import net.minecraftforge.event.ForgeSubscribe;
+import cpw.mods.fml.common.eventhandler.Event.Result;
 import net.minecraftforge.event.terraingen.PopulateChunkEvent.Post;
 import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.Mod.EventHandler;
@@ -32,11 +26,11 @@ import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.common.registry.VillagerRegistry;
 import cpw.mods.fml.common.registry.VillagerRegistry.IVillageCreationHandler;
 
-@Mod(modid = "bettervillages", name = "Better Villages Mod", version = BetterVillages.VERSION)
+@Mod(modid = "bettervillages", name = "Better Villages Mod", version = BetterVillages.VERSION, useMetadata = true)
 public class BetterVillages {
     public static final String VERSION = "0.2";
-	public static final int FLAG_ID = Block.planks.blockID;
-	public static int pathWay = Block.planks.blockID, fieldFence = Block.fence.blockID;
+	public static final Block FLAG_ID = Blocks.planks;
+	public static Block pathWay = Blocks.planks, fieldFence = Blocks.fence;
 	public static boolean lilies = true, fields = true, gates = true, wells = true, woodHut = true, torch = true, big = true;
 	public static String[] biomeNames = new String[] { BiomeGenBase.desertHills.biomeName, BiomeGenBase.extremeHills.biomeName, BiomeGenBase.extremeHillsEdge.biomeName, BiomeGenBase.jungle.biomeName,
 			BiomeGenBase.jungleHills.biomeName, BiomeGenBase.ocean.biomeName, BiomeGenBase.swampland.biomeName, BiomeGenBase.taiga.biomeName, BiomeGenBase.taigaHills.biomeName,
@@ -44,22 +38,24 @@ public class BetterVillages {
 	public static List<String> villageSpawnBiomes;
 	public static List<IVillageCreationHandler> handlers = new ArrayList<IVillageCreationHandler>();
 	static {
-		handlers.add(new VillageCreationHandler(ComponentVillageHouse4_Garden.class, 4, 2, 4, 2));
-		handlers.add(new VillageCreationHandler(ComponentVillageChurch.class, 20, 0, 1, 1));
-		handlers.add(new VillageCreationHandler(ComponentVillageHouse1.class, 20, 0, 2, 1));
-		handlers.add(new VillageCreationHandler(ComponentVillageWoodHut.class, 3, 2, 5, 3));
-		handlers.add(new VillageCreationHandler(ComponentVillageHall.class, 15, 0, 2, 1));
-		handlers.add(new VillageCreationHandler(ComponentVillageField.class, 3, 1, 4, 1));
-		handlers.add(new VillageCreationHandler(ComponentVillageField2.class, 3, 2, 4, 2));
-		handlers.add(new VillageCreationHandler(ComponentVillageHouse2.class, 15, 0, 1, 1));
-		handlers.add(new VillageCreationHandler(ComponentVillageHouse3.class, 8, 0, 3, 2));
+		handlers.add(new VillageCreationHandler(StructureVillagePieces.House4Garden.class, 4, 2, 4, 2));
+		handlers.add(new VillageCreationHandler(StructureVillagePieces.Church.class, 20, 0, 1, 1));
+		handlers.add(new VillageCreationHandler(StructureVillagePieces.WoodHut.class, 3, 2, 5, 3));
+		handlers.add(new VillageCreationHandler(StructureVillagePieces.Hall.class, 15, 0, 2, 1));
+		handlers.add(new VillageCreationHandler(StructureVillagePieces.Field1.class, 3, 1, 4, 1));
+		handlers.add(new VillageCreationHandler(StructureVillagePieces.Field2.class, 3, 2, 4, 2));
+        handlers.add(new VillageCreationHandler(StructureVillagePieces.House1.class, 20, 0, 2, 1));
+		handlers.add(new VillageCreationHandler(StructureVillagePieces.House2.class, 15, 0, 1, 1));
+		handlers.add(new VillageCreationHandler(StructureVillagePieces.House3.class, 8, 0, 3, 2));
 	}
 
 	@EventHandler
 	public void configLoad(FMLPreInitializationEvent event) {
 		Configuration config = new Configuration(event.getSuggestedConfigurationFile());
-		config.load();
-		pathWay = Math.max(0, config.get("general", "Ocean_villages_path", pathWay, "Block id used for streets of Villages built in Ocean biome").getInt());
+		pathWay = (Block)Block.field_149771_c.getObject(config.get("general", "Ocean_villages_path", "planks", "Block used for streets of Villages built in Ocean biome").getString());
+        if(pathWay == null){
+            pathWay = Blocks.planks;
+        }
 		villageSpawnBiomes = Arrays.asList(config.get("general", "Available_biomes", biomeNames, "Biomes where villages should be added, by biome name").getStringList());
 		lilies = config.get("general", "Spawn_waterlily", lilies, "Water lilies can be found on water in villages").getBoolean(lilies);
 		wells = config.get("general", "Decorate_wells", wells, "Village wells should be improved").getBoolean(wells);
@@ -75,20 +71,30 @@ public class BetterVillages {
 	@EventHandler
 	public void load(FMLInitializationEvent event) {
 		if (villageSpawnBiomes != null && !villageSpawnBiomes.isEmpty()) {
-			for (BiomeGenBase biome : BiomeGenBase.biomeList) {
+			for (BiomeGenBase biome : BiomeGenBase.func_150565_n()) {
 				if (biome != null && villageSpawnBiomes.contains(biome.biomeName)) {
 					BiomeManager.addVillageBiome(biome, true);//boolean has no effect ?
 				}
 			}
 		}
-		//if (ForgeVersion.buildVersion >= 891 || event.getSide().isClient()) {
 		MinecraftForge.EVENT_BUS.register(this);
-		MinecraftForge.TERRAIN_GEN_BUS.register(this);
-		//}
+        if (villageSpawnBiomes.contains(BiomeGenBase.ocean.biomeName)|| villageSpawnBiomes.contains(BiomeGenBase.field_150575_M.biomeName)){
+		    MinecraftForge.TERRAIN_GEN_BUS.register(this);
+        }
 		if (torch) {
-			if (ForgeVersion.buildVersion >= 861) {
-				MapGenStructureIO.func_143031_a(ComponentBetterVillageTorch.class, "BViT");
-			}
+            try{
+                int mod;
+                for(Method meth : MapGenStructureIO.class.getDeclaredMethods()){
+                    mod = meth.getModifiers();
+                    if(!Modifier.isPublic(mod) && !Modifier.isPrivate(mod) && meth.getParameterTypes().length==2 && String.class.isAssignableFrom(meth.getParameterTypes()[1])){
+                        meth.setAccessible(true);
+                        meth.invoke(null, ComponentBetterVillageTorch.class, "BViT");//func_143031_a
+                        break;
+                    }
+                }
+            }catch (Exception e){
+                e.printStackTrace();
+            }
 			VillagerRegistry.instance().registerVillageCreationHandler(new VillageCreationHandler(ComponentBetterVillageTorch.class, 15, 0, 1, 1));
 		}
 		if (big) {
@@ -98,39 +104,41 @@ public class BetterVillages {
 		}
 	}
 
-	@ForgeSubscribe
+	@SubscribeEvent
 	public void onPopulating(Post event) {
 		if (event.hasVillageGenerated) {
 			int i = event.chunkX * 16;
 			int k = event.chunkZ * 16;
 			BiomeGenBase biome = event.world.getBiomeGenForCoords(i, k);
-			int borderId = biome == BiomeGenBase.desert ? Block.sandStone.blockID : Block.wood.blockID;
-			int y, id, p;
+			Block borderId = biome == BiomeGenBase.desert ? Blocks.sandstone : Blocks.log;
+			int y, p;
+            Block id;
 			int[] field;
 			List<int[]> list;
 			for (int x = i; x < i + 16; x++) {
 				for (int z = k; z < k + 16; z++) {//Search within chunk
-					if (biome == BiomeGenBase.ocean) {
+					if (biome == BiomeGenBase.ocean || biome == BiomeGenBase.field_150575_M) {
 						y = event.world.getTopSolidOrLiquidBlock(x, z) - 1;//ignores water
-						id = event.world.getBlockId(x, y, z);
-						if (id == Block.cloth.blockID) {
-							if (isReplaceable(event.world, x, y - 4, z))
-								event.world.setBlock(x, y - 4, z, pathWay);
+						id = event.world.func_147439_a(x, y, z);
+						if (id == Blocks.wool && event.world.func_147439_a(x-1, y-1, z) == Blocks.torch && event.world.func_147439_a(x+1, y-1, z) == Blocks.torch && event.world.func_147439_a(x, y-1, z-1) == Blocks.torch && event.world.func_147439_a(x, y-1, z+1) == Blocks.torch) {
+							//Definetly a torch
+                            if (isReplaceable(event.world, x, y - 4, z))
+								event.world.func_147449_b(x, y - 4, z, pathWay);
 							continue;
 						}
-						if (id == Block.stairsWoodOak.blockID) {
+						if (id == Blocks.oak_stairs) {
 							do {
 								y--;
-							} while (event.world.getBlockId(x, y, z) == 0 || isWaterId(event.world.getBlockId(x, y, z)));
-							id = event.world.getBlockId(x, y, z);
+							} while (event.world.func_147437_c(x, y, z) || isWaterId(event.world.func_147439_a(x, y, z)));
+							id = event.world.func_147439_a(x, y, z);
 						}
 						if (id == FLAG_ID) {//Use flag
-							id = event.world.getBlockId(x, y + 1, z);
+							id = event.world.func_147439_a(x, y + 1, z);
 							if (isWaterId(id)) {
-								event.world.setBlock(x, y, z, id, 0, 2);//destroy flag
-								while (event.world.getBlockId(x, y, z) != 0)
+								event.world.func_147465_d(x, y, z, id, 0, 2);//destroy flag
+								while (!event.world.func_147437_c(x, y, z))
 									y++;
-								event.world.setBlock(x, y, z, pathWay);//rebuilt pathway
+								event.world.func_147449_b(x, y, z, pathWay);//rebuilt pathway
 							}
 							continue;
 						}
@@ -138,14 +146,14 @@ public class BetterVillages {
 					y = event.world.getHeightValue(x, z);//block on top of a "solid" block
 					if (y > 1) {
 						y--;
-						id = event.world.getBlockId(x, y, z);
-						while (Block.blocksList[id] == null || Block.blocksList[id].isLeaves(event.world, x, y, z)) {
+						id = event.world.func_147439_a(x, y, z);
+						while (id.isAir(event.world, x, y, z) || id.isLeaves(event.world, x, y, z)) {
 							y--;
-							id = event.world.getBlockId(x, y, z);
+							id = event.world.func_147439_a(x, y, z);
 						}
 						if (isWaterId(id)) {//found water in open air
-							if (lilies && event.world.isAirBlock(x, y + 1, z) && event.rand.nextInt(10) == 0)
-								event.world.setBlock(x, y + 1, z, Block.waterlily.blockID, 0, 2);//place waterlily randomly
+							if (lilies && event.world.func_147437_c(x, y + 1, z) && event.rand.nextInt(10) == 0)
+								event.world.func_147465_d(x, y + 1, z, Blocks.waterlily, 0, 2);//place waterlily randomly
 							if (gates) {
 								field = new int[] { x, y, z };
 								list = getBorder(event.world, id, field);
@@ -162,14 +170,14 @@ public class BetterVillages {
 												p = 3;//east
 											else if (z - field[2] < 0)
 												p = 2;//north
-											event.world.setBlock(field[0], field[1] + 1, field[2], Block.fenceGate.blockID, p, 2);//place fence gate
+											event.world.func_147465_d(field[0], field[1] + 1, field[2], Blocks.fence_gate, p, 2);//place fence gate
 										}
 									}
 								}
 							}
 							continue;
 						}
-						if (fields && id == Block.tilledField.blockID) {//found tilled field in open air, assuming this is a village field
+						if (fields && id == Blocks.farmland) {//found tilled field in open air, assuming this is a village field
 							field = new int[] { x, y, z };
 							list = getBorder(event.world, borderId, field);
 							if (!list.isEmpty()) {
@@ -177,20 +185,20 @@ public class BetterVillages {
 								case 3://simple border case
 									field = list.get(1);//get middle border block
 									if (isReplaceable(event.world, field[0], field[1] + 1, field[2]))
-										event.world.setBlock(field[0], field[1] + 1, field[2], fieldFence, 0, 2);//place fence
+										event.world.func_147465_d(field[0], field[1] + 1, field[2], fieldFence, 0, 2);//place fence
 									break;
 								case 5://corner case
 									field = list.remove(1);
 									if (isReplaceable(event.world, field[0], field[1] + 1, field[2]))
-										event.world.setBlock(field[0], field[1] + 1, field[2], fieldFence, 0, 2);
+										event.world.func_147465_d(field[0], field[1] + 1, field[2], fieldFence, 0, 2);
 									field = list.remove(2);
 									if (isReplaceable(event.world, field[0], field[1] + 1, field[2]))
-										event.world.setBlock(field[0], field[1] + 1, field[2], fieldFence, 0, 2);
+										event.world.func_147465_d(field[0], field[1] + 1, field[2], fieldFence, 0, 2);
 									for (int[] pos : list) {
 										if (isReplaceable(event.world, pos[0], pos[1] + 1, pos[2])) {
-											event.world.setBlock(pos[0], pos[1] + 1, pos[2], fieldFence, 0, 2);
+											event.world.func_147465_d(pos[0], pos[1] + 1, pos[2], fieldFence, 0, 2);
 											if (isReplaceable(event.world, pos[0], pos[1] + 2, pos[2]) && isCorner(event.world, borderId, pos))
-												event.world.setBlock(pos[0], pos[1] + 2, pos[2], Block.torchWood.blockID, 0, 2);
+												event.world.func_147465_d(pos[0], pos[1] + 2, pos[2], Blocks.torch, 0, 2);
 										}
 									}
 									break;
@@ -201,31 +209,31 @@ public class BetterVillages {
 							list = null;
 							continue;
 						}
-						if (wells && id == Block.cobblestone.blockID) {//found cobblestone in open air
-							id = event.world.getBlockId(x, y - 4, z);
+						if (wells && id == Blocks.cobblestone) {//found cobblestone in open air
+							id = event.world.func_147439_a(x, y - 4, z);
 							if (isWaterId(id)) {//found water under cobblestone layer
 								y -= 4;
 								field = new int[] { x, y, z };
 								list = getBorder(event.world, id, field);
 								if (list.size() == 3) {//found 4 water blocks
-									list = getBorder(event.world, Block.cobblestone.blockID, field);
+									list = getBorder(event.world, Blocks.cobblestone, field);
 									if (list.size() == 5) {//found 5 cobblestone surrounding one water block, assuming this is a village well
 										field = list.remove(1);
-										event.world.setBlock(field[0], field[1] + 1, field[2], Block.stoneSingleSlab.blockID, 0, 2);
+										event.world.func_147465_d(field[0], field[1] + 1, field[2], Blocks.stone_slab, 0, 2);
 										field = list.remove(2);
-										event.world.setBlock(field[0], field[1] + 1, field[2], Block.stoneSingleSlab.blockID, 0, 2);
+										event.world.func_147465_d(field[0], field[1] + 1, field[2], Blocks.stone_slab, 0, 2);
 										for (int[] pos : list) {
-											for (int[] posb : getBorder(event.world, Block.gravel.blockID, pos))
-												event.world.setBlock(posb[0], posb[1], posb[2], Block.stoneSingleSlab.blockID, 0, 2);
+											for (int[] posb : getBorder(event.world, Blocks.gravel, pos))
+												event.world.func_147465_d(posb[0], posb[1], posb[2], Blocks.stone_slab, 0, 2);
 										}
-										while (event.world.getBlockId(x, y, z) == id) {
+										while (event.world.func_147439_a(x, y, z) == id) {
 											y--;
 										}
 										field = new int[] { x, y, z };
-										list = getBorder(event.world, Block.cobblestone.blockID, field);
+										list = getBorder(event.world, Blocks.cobblestone, field);
 										for (int[] pos : list)
-											event.world.setBlock(pos[0], pos[1], pos[2], Block.blockIron.blockID, 0, 2);
-										event.world.setBlock(field[0], field[1], field[2], Block.blockIron.blockID, 0, 2);
+											event.world.func_147465_d(pos[0], pos[1], pos[2], Blocks.iron_block, 0, 2);
+										event.world.func_147465_d(field[0], field[1], field[2], Blocks.iron_block, 0, 2);
 									}
 								}
 							}
@@ -234,13 +242,13 @@ public class BetterVillages {
 						if (woodHut && id == borderId) {//Found top
 							do {
 								y--;
-								id = event.world.getBlockId(x, y, z);
-							} while (id == 0 || !Block.blocksList[id].isOpaqueCube());
-							if (id == Block.dirt.blockID) {//Found dirt floor
-								event.world.setBlock(x, y, z, borderId);
-								list = getBorder(event.world, Block.cobblestone.blockID, new int[] { x, y, z });
+								id = event.world.func_147439_a(x, y, z);
+							} while (id.isAir(event.world, x, y, z) || !id.func_149721_r());//not opaque
+							if (id == Blocks.dirt) {//Found dirt floor
+								event.world.func_147449_b(x, y, z, borderId);
+								list = getBorder(event.world, Blocks.cobblestone, new int[] { x, y, z });
 								for (int[] pos : list) {
-									event.world.setBlock(pos[0], pos[1], pos[2], Block.stone.blockID, 0, 2);
+									event.world.func_147465_d(pos[0], pos[1], pos[2], Blocks.stone, 0, 2);
 								}
 							}
 						}
@@ -250,26 +258,26 @@ public class BetterVillages {
 		}
 	}
 
-	@ForgeSubscribe
+	@SubscribeEvent
 	public void onSettingGravel(net.minecraftforge.event.terraingen.BiomeEvent.GetVillageBlockID event) {
-		if (event.biome == BiomeGenBase.ocean && event.original == Block.gravel.blockID) {
+		if ((event.biome == BiomeGenBase.ocean || event.biome == BiomeGenBase.field_150575_M) && event.original == Blocks.gravel) {
 			event.replacement = FLAG_ID;//flag used to reconstruct pathway afterward
 			event.setResult(Result.DENY);
 		}
 	}
 
-	private static List<int[]> getBorder(World world, int id, int[] field) {
+	private static List<int[]> getBorder(World world, Block id, int[] field) {
 		List<int[]> list = new ArrayList<int[]>();
 		for (int x = field[0] - 1; x < field[0] + 2; x++) {
 			for (int z = field[2] - 1; z < field[2] + 2; z++) {
-				if ((x != field[0] || z != field[2]) && world.getBlockId(x, field[1], z) == id)
+				if ((x != field[0] || z != field[2]) && world.func_147439_a(x, field[1], z) == id)
 					list.add(new int[] { x, field[1], z });
 			}
 		}
 		return list;
 	}
 
-	private static boolean isCorner(World world, int id, int[] pos) {
+	private static boolean isCorner(World world, Block id, int[] pos) {
 		List<int[]> list = getBorder(world, id, pos);
 		if (list.size() < 2)
 			return false;
@@ -279,10 +287,10 @@ public class BetterVillages {
 	}
 
 	private static boolean isReplaceable(World world, int x, int y, int z) {
-		return Block.blocksList[world.getBlockId(x, y, z)] == null || Block.blocksList[world.getBlockId(x, y, z)].isBlockReplaceable(world, x, y, z);
+		return world.func_147437_c(x, y, z) || world.func_147439_a(x, y, z).isReplaceable(world, x, y, z);
 	}
 
-	private static boolean isWaterId(int id) {
-		return id == Block.waterStill.blockID || id == Block.waterMoving.blockID || (Block.blocksList[id] != null && Block.blocksList[id].blockMaterial == Material.water);
+	private static boolean isWaterId(Block id) {
+		return id.func_149688_o() == Material.field_151586_h;
 	}
 }

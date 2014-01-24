@@ -8,10 +8,9 @@ import java.util.Map;
 import java.util.Random;
 
 import net.minecraft.util.MathHelper;
-import net.minecraft.world.gen.structure.ComponentVillage;
-import net.minecraft.world.gen.structure.ComponentVillageStartPiece;
-import net.minecraft.world.gen.structure.StructureVillagePieceWeight;
 import cpw.mods.fml.common.registry.VillagerRegistry.IVillageCreationHandler;
+import net.minecraft.world.gen.structure.StructureComponent;
+import net.minecraft.world.gen.structure.StructureVillagePieces;
 
 public class VillageCreationHandler implements IVillageCreationHandler {
 	private Class<?> piece;
@@ -27,7 +26,7 @@ public class VillageCreationHandler implements IVillageCreationHandler {
 	}
 
 	@Override
-	public Object buildComponent(StructureVillagePieceWeight villagePiece, ComponentVillageStartPiece startPiece, @SuppressWarnings("rawtypes") List pieces, Random random, int p1, int p2, int p3, int p4, int p5) {
+	public Object buildComponent(StructureVillagePieces.PieceWeight villagePiece, StructureVillagePieces.Start startPiece, @SuppressWarnings("rawtypes") List pieces, Random random, int p1, int p2, int p3, int p4, int p5) {
 		Class<?> clazz = villagePiece.villagePieceClass;
 		Object obj = null;
 		if (!methMap.containsKey(clazz.getName())) {
@@ -37,7 +36,7 @@ public class VillageCreationHandler implements IVillageCreationHandler {
 				if (Modifier.isPublic(mod) && Modifier.isStatic(mod)) {
 					try {
 						obj = meth.invoke(null, startPiece, pieces, random, p1, p2, p3, p4, p5);
-						if (ComponentVillage.class.isInstance(obj)) {
+						if (StructureComponent.class.isInstance(obj)) {
 							methMap.put(clazz.getName(), meth);
 							break;
 						}
@@ -62,7 +61,7 @@ public class VillageCreationHandler implements IVillageCreationHandler {
 	}
 
 	@Override
-	public StructureVillagePieceWeight getVillagePieceWeight(Random random, int i) {
+	public StructureVillagePieces.PieceWeight getVillagePieceWeight(Random random, int i) {
 		return new BetterStructureVillagePieceWeight(piece, weight, MathHelper.getRandomIntegerInRange(random, min + i, max + i * multiplier));
 	}
 }
