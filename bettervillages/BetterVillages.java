@@ -82,19 +82,7 @@ public class BetterVillages {
 		    MinecraftForge.TERRAIN_GEN_BUS.register(this);
         }
 		if (torch) {
-            try{
-                int mod;
-                for(Method meth : MapGenStructureIO.class.getDeclaredMethods()){
-                    mod = meth.getModifiers();
-                    if(!Modifier.isPublic(mod) && !Modifier.isPrivate(mod) && meth.getParameterTypes().length==2 && String.class.isAssignableFrom(meth.getParameterTypes()[1])){
-                        meth.setAccessible(true);
-                        meth.invoke(null, ComponentBetterVillageTorch.class, "BViT");//func_143031_a
-                        break;
-                    }
-                }
-            }catch (Exception e){
-                e.printStackTrace();
-            }
+            MapGenStructureIO.func_143031_a(ComponentBetterVillageTorch.class, "BViT");
 			VillagerRegistry.instance().registerVillageCreationHandler(new VillageCreationHandler(ComponentBetterVillageTorch.class, 15, 0, 1, 1));
 		}
 		if (big) {

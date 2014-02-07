@@ -1,12 +1,28 @@
+buildscript {
+    repositories {
+        mavenCentral()
+        maven {
+            name = "forge"
+            url = "http://files.minecraftforge.net/maven"
+        }
+        maven {
+            name = "sonatype"
+            url = "https://oss.sonatype.org/content/repositories/snapshots/"
+        }
+    }
+    dependencies {
+        classpath 'net.minecraftforge.gradle:ForgeGradle:1.1-SNAPSHOT'
+    }
+}
 apply plugin: 'forge'
 minecraft {
-    version = "1.7.2-10.12.0.1013"
+    version = "1.7.2-10.12.0.1019"
     assetDir = "eclipse/assets"
 }
 version = "0.3(1.7.2)"
 archivesBaseName = project.projectDir.name
-sourceSets.main.java{srcDirs project.projectDir.getPath() exclude("build*", "bin/**" , "*.*ml", ".*")}
-sourceSets.main.resources{srcDirs project.projectDir.getPath() exclude("build*", "bin/**" , "*.*ml", ".*")}
+sourceSets.main.java{srcDirs project.projectDir.getPath() include("bettervillages/**")}
+sourceSets.main.resources{srcDirs project.projectDir.getPath() include("mcmod.info" , "pack.mcmeta")}
 processResources {
     // replace stuff in mcmod.info, nothing else
     from(project.sourceSets.main.resources.srcDirs) {
@@ -16,6 +32,10 @@ processResources {
     }
     // copy everything else, thats not mcmod.info
     from(project.sourceSets.main.resources.srcDirs) {
-        include("assets/**", "pack.mcmeta")
+        include("pack.mcmeta")
     }
+}
+jar {
+    //Keep the jar as clean as possible
+    includeEmptyDirs = false
 }
