@@ -26,11 +26,11 @@ public class ComponentBetterVillageTorch extends StructureVillagePieces.Torch {
 			this.boundingBox.offset(0, this.field_143015_k - this.boundingBox.maxY + 4 - 1, 0);
 		}
 		//NetherFenceAndGlowstone
-		this.func_151549_a(par1World, par3StructureBoundingBox, 0, 0, 0, 0, 3, 0, Blocks.air, Blocks.air, false);
-		this.func_151550_a(par1World, Blocks.nether_brick_fence, 0, 1, 0, 0, par3StructureBoundingBox);
-		this.func_151550_a(par1World, Blocks.nether_brick_fence, 0, 1, 1, 0, par3StructureBoundingBox);
-		this.func_151550_a(par1World, Blocks.nether_brick_fence, 0, 1, 2, 0, par3StructureBoundingBox);
-		this.func_151550_a(par1World, Blocks.glowstone, 0, 1, 3, 0, par3StructureBoundingBox);
+		this.fillWithBlocks(par1World, par3StructureBoundingBox, 0, 0, 0, 0, 3, 0, Blocks.air, Blocks.air, false);
+		this.placeBlockAtCurrentPosition(par1World, Blocks.nether_brick_fence, 0, 1, 0, 0, par3StructureBoundingBox);
+		this.placeBlockAtCurrentPosition(par1World, Blocks.nether_brick_fence, 0, 1, 1, 0, par3StructureBoundingBox);
+		this.placeBlockAtCurrentPosition(par1World, Blocks.nether_brick_fence, 0, 1, 2, 0, par3StructureBoundingBox);
+		this.placeBlockAtCurrentPosition(par1World, Blocks.glowstone, 0, 1, 3, 0, par3StructureBoundingBox);
 		return true;
 	}
 

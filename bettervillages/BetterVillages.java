@@ -1,12 +1,11 @@
 package bettervillages;
 
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
+import cpw.mods.fml.common.registry.GameData;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
 import net.minecraft.init.Blocks;
@@ -52,7 +51,7 @@ public class BetterVillages {
 	@EventHandler
 	public void configLoad(FMLPreInitializationEvent event) {
 		Configuration config = new Configuration(event.getSuggestedConfigurationFile());
-		pathWay = (Block)Block.field_149771_c.getObject(config.get("general", "Ocean_villages_path", "planks", "Block used for streets of Villages built in Ocean biome").getString());
+		pathWay = GameData.blockRegistry.getObject(config.get("general", "Ocean_villages_path", "planks", "Block used for streets of Villages built in Ocean biome").getString());
         if(pathWay == null){
             pathWay = Blocks.planks;
         }
@@ -71,14 +70,14 @@ public class BetterVillages {
 	@EventHandler
 	public void load(FMLInitializationEvent event) {
 		if (villageSpawnBiomes != null && !villageSpawnBiomes.isEmpty()) {
-			for (BiomeGenBase biome : BiomeGenBase.func_150565_n()) {
+			for (BiomeGenBase biome : BiomeGenBase.getBiomeGenArray()) {
 				if (biome != null && villageSpawnBiomes.contains(biome.biomeName)) {
 					BiomeManager.addVillageBiome(biome, true);//boolean has no effect ?
 				}
 			}
 		}
 		MinecraftForge.EVENT_BUS.register(this);
-        if (villageSpawnBiomes.contains(BiomeGenBase.ocean.biomeName)|| villageSpawnBiomes.contains(BiomeGenBase.field_150575_M.biomeName)){
+        if (villageSpawnBiomes.contains(BiomeGenBase.ocean.biomeName)|| villageSpawnBiomes.contains(BiomeGenBase.deepOcean.biomeName)){
 		    MinecraftForge.TERRAIN_GEN_BUS.register(this);
         }
 		if (torch) {
@@ -105,28 +104,28 @@ public class BetterVillages {
 			List<int[]> list;
 			for (int x = i; x < i + 16; x++) {
 				for (int z = k; z < k + 16; z++) {//Search within chunk
-					if (biome == BiomeGenBase.ocean || biome == BiomeGenBase.field_150575_M) {
+					if (biome == BiomeGenBase.ocean || biome == BiomeGenBase.deepOcean) {
 						y = event.world.getTopSolidOrLiquidBlock(x, z) - 1;//ignores water
-						id = event.world.func_147439_a(x, y, z);
-						if (id == Blocks.wool && event.world.func_147439_a(x-1, y-1, z) == Blocks.torch && event.world.func_147439_a(x+1, y-1, z) == Blocks.torch && event.world.func_147439_a(x, y-1, z-1) == Blocks.torch && event.world.func_147439_a(x, y-1, z+1) == Blocks.torch) {
+						id = event.world.getBlock(x, y, z);
+						if (id == Blocks.wool && event.world.getBlock(x-1, y-1, z) == Blocks.torch && event.world.getBlock(x+1, y-1, z) == Blocks.torch && event.world.getBlock(x, y-1, z-1) == Blocks.torch && event.world.getBlock(x, y-1, z+1) == Blocks.torch) {
 							//Definetly a torch
                             if (isReplaceable(event.world, x, y - 4, z))
-								event.world.func_147449_b(x, y - 4, z, pathWay);
+								event.world.setBlock(x, y - 4, z, pathWay);
 							continue;
 						}
 						if (id == Blocks.oak_stairs) {
 							do {
 								y--;
-							} while (event.world.func_147437_c(x, y, z) || isWaterId(event.world.func_147439_a(x, y, z)));
-							id = event.world.func_147439_a(x, y, z);
+							} while (event.world.isAirBlock(x, y, z) || isWaterId(event.world.getBlock(x, y, z)));
+							id = event.world.getBlock(x, y, z);
 						}
 						if (id == FLAG_ID) {//Use flag
-							id = event.world.func_147439_a(x, y + 1, z);
+							id = event.world.getBlock(x, y + 1, z);
 							if (isWaterId(id)) {
-								event.world.func_147465_d(x, y, z, id, 0, 2);//destroy flag
-								while (!event.world.func_147437_c(x, y, z))
+								event.world.setBlock(x, y, z, id, 0, 2);//destroy flag
+								while (!event.world.isAirBlock(x, y, z))
 									y++;
-								event.world.func_147449_b(x, y, z, pathWay);//rebuilt pathway
+								event.world.setBlock(x, y, z, pathWay);//rebuilt pathway
 							}
 							continue;
 						}
@@ -134,14 +133,14 @@ public class BetterVillages {
 					y = event.world.getHeightValue(x, z);//block on top of a "solid" block
 					if (y > 1) {
 						y--;
-						id = event.world.func_147439_a(x, y, z);
+						id = event.world.getBlock(x, y, z);
 						while (id.isAir(event.world, x, y, z) || id.isLeaves(event.world, x, y, z)) {
 							y--;
-							id = event.world.func_147439_a(x, y, z);
+							id = event.world.getBlock(x, y, z);
 						}
 						if (isWaterId(id)) {//found water in open air
-							if (lilies && event.world.func_147437_c(x, y + 1, z) && event.rand.nextInt(10) == 0)
-								event.world.func_147465_d(x, y + 1, z, Blocks.waterlily, 0, 2);//place waterlily randomly
+							if (lilies && event.world.isAirBlock(x, y + 1, z) && event.rand.nextInt(10) == 0)
+								event.world.setBlock(x, y + 1, z, Blocks.waterlily, 0, 2);//place waterlily randomly
 							if (gates) {
 								field = new int[] { x, y, z };
 								list = getBorder(event.world, id, field);
@@ -158,7 +157,7 @@ public class BetterVillages {
 												p = 3;//east
 											else if (z - field[2] < 0)
 												p = 2;//north
-											event.world.func_147465_d(field[0], field[1] + 1, field[2], Blocks.fence_gate, p, 2);//place fence gate
+											event.world.setBlock(field[0], field[1] + 1, field[2], Blocks.fence_gate, p, 2);//place fence gate
 										}
 									}
 								}
@@ -173,20 +172,20 @@ public class BetterVillages {
 								case 3://simple border case
 									field = list.get(1);//get middle border block
 									if (isReplaceable(event.world, field[0], field[1] + 1, field[2]))
-										event.world.func_147465_d(field[0], field[1] + 1, field[2], fieldFence, 0, 2);//place fence
+										event.world.setBlock(field[0], field[1] + 1, field[2], fieldFence, 0, 2);//place fence
 									break;
 								case 5://corner case
 									field = list.remove(1);
 									if (isReplaceable(event.world, field[0], field[1] + 1, field[2]))
-										event.world.func_147465_d(field[0], field[1] + 1, field[2], fieldFence, 0, 2);
+										event.world.setBlock(field[0], field[1] + 1, field[2], fieldFence, 0, 2);
 									field = list.remove(2);
 									if (isReplaceable(event.world, field[0], field[1] + 1, field[2]))
-										event.world.func_147465_d(field[0], field[1] + 1, field[2], fieldFence, 0, 2);
+										event.world.setBlock(field[0], field[1] + 1, field[2], fieldFence, 0, 2);
 									for (int[] pos : list) {
 										if (isReplaceable(event.world, pos[0], pos[1] + 1, pos[2])) {
-											event.world.func_147465_d(pos[0], pos[1] + 1, pos[2], fieldFence, 0, 2);
+											event.world.setBlock(pos[0], pos[1] + 1, pos[2], fieldFence, 0, 2);
 											if (isReplaceable(event.world, pos[0], pos[1] + 2, pos[2]) && isCorner(event.world, borderId, pos))
-												event.world.func_147465_d(pos[0], pos[1] + 2, pos[2], Blocks.torch, 0, 2);
+												event.world.setBlock(pos[0], pos[1] + 2, pos[2], Blocks.torch, 0, 2);
 										}
 									}
 									break;
@@ -198,7 +197,7 @@ public class BetterVillages {
 							continue;
 						}
 						if (wells && id == Blocks.cobblestone) {//found cobblestone in open air
-							id = event.world.func_147439_a(x, y - 4, z);
+							id = event.world.getBlock(x, y - 4, z);
 							if (isWaterId(id)) {//found water under cobblestone layer
 								y -= 4;
 								field = new int[] { x, y, z };
@@ -207,21 +206,21 @@ public class BetterVillages {
 									list = getBorder(event.world, Blocks.cobblestone, field);
 									if (list.size() == 5) {//found 5 cobblestone surrounding one water block, assuming this is a village well
 										field = list.remove(1);
-										event.world.func_147465_d(field[0], field[1] + 1, field[2], Blocks.stone_slab, 0, 2);
+										event.world.setBlock(field[0], field[1] + 1, field[2], Blocks.stone_slab, 0, 2);
 										field = list.remove(2);
-										event.world.func_147465_d(field[0], field[1] + 1, field[2], Blocks.stone_slab, 0, 2);
+										event.world.setBlock(field[0], field[1] + 1, field[2], Blocks.stone_slab, 0, 2);
 										for (int[] pos : list) {
 											for (int[] posb : getBorder(event.world, Blocks.gravel, pos))
-												event.world.func_147465_d(posb[0], posb[1], posb[2], Blocks.stone_slab, 0, 2);
+												event.world.setBlock(posb[0], posb[1], posb[2], Blocks.stone_slab, 0, 2);
 										}
-										while (event.world.func_147439_a(x, y, z) == id) {
+										while (event.world.getBlock(x, y, z) == id) {
 											y--;
 										}
 										field = new int[] { x, y, z };
 										list = getBorder(event.world, Blocks.cobblestone, field);
 										for (int[] pos : list)
-											event.world.func_147465_d(pos[0], pos[1], pos[2], Blocks.iron_block, 0, 2);
-										event.world.func_147465_d(field[0], field[1], field[2], Blocks.iron_block, 0, 2);
+											event.world.setBlock(pos[0], pos[1], pos[2], Blocks.iron_block, 0, 2);
+										event.world.setBlock(field[0], field[1], field[2], Blocks.iron_block, 0, 2);
 									}
 								}
 							}
@@ -230,13 +229,13 @@ public class BetterVillages {
 						if (woodHut && id == borderId) {//Found top
 							do {
 								y--;
-								id = event.world.func_147439_a(x, y, z);
-							} while (id.isAir(event.world, x, y, z) || !id.func_149721_r());//not opaque
+								id = event.world.getBlock(x, y, z);
+							} while (id.isAir(event.world, x, y, z) || !id.isOpaqueCube());//not opaque
 							if (id == Blocks.dirt) {//Found dirt floor
-								event.world.func_147449_b(x, y, z, borderId);
+								event.world.setBlock(x, y, z, borderId);
 								list = getBorder(event.world, Blocks.cobblestone, new int[] { x, y, z });
 								for (int[] pos : list) {
-									event.world.func_147465_d(pos[0], pos[1], pos[2], Blocks.stone, 0, 2);
+									event.world.setBlock(pos[0], pos[1], pos[2], Blocks.stone, 0, 2);
 								}
 							}
 						}
@@ -248,7 +247,7 @@ public class BetterVillages {
 
 	@SubscribeEvent
 	public void onSettingGravel(net.minecraftforge.event.terraingen.BiomeEvent.GetVillageBlockID event) {
-		if ((event.biome == BiomeGenBase.ocean || event.biome == BiomeGenBase.field_150575_M) && event.original == Blocks.gravel) {
+		if ((event.biome == BiomeGenBase.ocean || event.biome == BiomeGenBase.deepOcean) && event.original == Blocks.gravel) {
 			event.replacement = FLAG_ID;//flag used to reconstruct pathway afterward
 			event.setResult(Result.DENY);
 		}
@@ -258,7 +257,7 @@ public class BetterVillages {
 		List<int[]> list = new ArrayList<int[]>();
 		for (int x = field[0] - 1; x < field[0] + 2; x++) {
 			for (int z = field[2] - 1; z < field[2] + 2; z++) {
-				if ((x != field[0] || z != field[2]) && world.func_147439_a(x, field[1], z) == id)
+				if ((x != field[0] || z != field[2]) && world.getBlock(x, field[1], z) == id)
 					list.add(new int[] { x, field[1], z });
 			}
 		}
@@ -275,10 +274,10 @@ public class BetterVillages {
 	}
 
 	private static boolean isReplaceable(World world, int x, int y, int z) {
-		return world.func_147437_c(x, y, z) || world.func_147439_a(x, y, z).isReplaceable(world, x, y, z);
+		return world.isAirBlock(x, y, z) || world.getBlock(x, y, z).isReplaceable(world, x, y, z);
 	}
 
 	private static boolean isWaterId(Block id) {
-		return id.func_149688_o() == Material.field_151586_h;
+		return id.getMaterial() == Material.water;
 	}
 }
