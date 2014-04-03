@@ -5,3 +5,7 @@
 !mcmod.info
 !pack.mcmeta
 !/bettervillages/
+!/gradle/
+!gradlew*
+!changelog.md
+!update.xml

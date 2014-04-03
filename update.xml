@@ -1,0 +1,23 @@
+<mod modid="bettervillages">
+    <mcVersion version="1.7.2">
+        <release type="release" version="0.3"
+                 url="http://www.minecraftforum.net/topic/1651891-172forgegotolink-updates-mystic-mods/#Villages"
+                 download="http://www.mediafire.com/download/26pilp44gaj72cp/BetterVillages-0.3(1.7.2).jar"
+                 md5="C213706CD990ACBAB2919426DD775A1A"
+                />
+    </mcVersion>
+	<mcVersion version="1.6.4">
+        <release type="release" version="0.2"
+                 url="http://www.minecraftforum.net/topic/1651891-172forgegotolink-updates-mystic-mods/#Villages"
+                 download="http://www.mediafire.com/download/2612abqk9745x6t/BetterVillages_0.2(1.6.4).zip"
+                 md5="D2726764DF950D40AA0F3D29668F22D9"
+                />
+    </mcVersion>
+    <mcVersion version="1.6.2">
+        <release type="release" version="0.1"
+                 url="http://www.minecraftforum.net/topic/1651891-172forgegotolink-updates-mystic-mods/#Villages"
+                 download="http://www.mediafire.com/download/tcv60rke052u15n/BetterVillages_0.1(1.6.X).zip"
+                 md5="5AF9BB18758EA6F401A202ADBF86AFAA"
+                />
+    </mcVersion>
+</mod>

@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import cpw.mods.fml.common.FMLCommonHandler;
+import cpw.mods.fml.common.ModContainer;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.registry.GameData;
 import net.minecraft.block.Block;
@@ -25,9 +27,8 @@ import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.common.registry.VillagerRegistry;
 import cpw.mods.fml.common.registry.VillagerRegistry.IVillageCreationHandler;
 
-@Mod(modid = "bettervillages", name = "Better Villages Mod", version = BetterVillages.VERSION, useMetadata = true)
+@Mod(modid = "bettervillages", name = "Better Villages Mod", useMetadata = true)
 public class BetterVillages {
-    public static final String VERSION = "0.2";
 	public static final Block FLAG_ID = Blocks.planks;
 	public static Block pathWay = Blocks.planks, fieldFence = Blocks.fence;
 	public static boolean lilies = true, fields = true, gates = true, wells = true, woodHut = true, torch = true, big = true;
@@ -65,6 +66,16 @@ public class BetterVillages {
 		big = config.get("general", "Bigger_Villages", big, "Villages generates in clusters").getBoolean(big);
 		if (config.hasChanged())
 			config.save();
+        if(event.getSourceFile().getName().endsWith(".jar") && event.getSide().isClient()){
+            try {
+                Class.forName("mods.mud.ModUpdateDetector").getDeclaredMethod("registerMod", ModContainer.class, String.class, String.class).invoke(null,
+                        FMLCommonHandler.instance().findContainerFor(this),
+                        "https://raw.github.com/GotoLink/BetterVillages/master/update.xml",
+                        "https://raw.github.com/GotoLink/BetterVillages/master/changelog.md"
+                );
+            } catch (Throwable e) {
+            }
+        }
 	}
 
 	@EventHandler
