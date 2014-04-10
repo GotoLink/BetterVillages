@@ -13,13 +13,14 @@ import net.minecraft.block.material.Material;
 import net.minecraft.init.Blocks;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.BiomeGenBase;
+import net.minecraft.world.biome.BiomeGenOcean;
 import net.minecraft.world.gen.structure.MapGenStructureIO;
 import net.minecraft.world.gen.structure.StructureVillagePieces;
+import net.minecraftforge.common.BiomeDictionary;
 import net.minecraftforge.common.BiomeManager;
 import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.common.MinecraftForge;
 import cpw.mods.fml.common.eventhandler.Event.Result;
-import net.minecraftforge.event.terraingen.PopulateChunkEvent.Post;
 import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.Mod.EventHandler;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
@@ -30,7 +31,7 @@ import cpw.mods.fml.common.registry.VillagerRegistry.IVillageCreationHandler;
 @Mod(modid = "bettervillages", name = "Better Villages Mod", useMetadata = true)
 public class BetterVillages {
 	public static final Block FLAG_ID = Blocks.planks;
-	public static Block pathWay = Blocks.planks, fieldFence = Blocks.fence;
+	public static Block pathWay, fieldFence;
 	public static boolean lilies = true, fields = true, gates = true, wells = true, woodHut = true, torch = true, big = true;
 	public static String[] biomeNames = new String[] { BiomeGenBase.desertHills.biomeName, BiomeGenBase.extremeHills.biomeName, BiomeGenBase.extremeHillsEdge.biomeName, BiomeGenBase.jungle.biomeName,
 			BiomeGenBase.jungleHills.biomeName, BiomeGenBase.ocean.biomeName, BiomeGenBase.swampland.biomeName, BiomeGenBase.taiga.biomeName, BiomeGenBase.taigaHills.biomeName,
@@ -49,11 +50,14 @@ public class BetterVillages {
 		handlers.add(new VillageCreationHandler(StructureVillagePieces.House3.class, 8, 0, 3, 2));
 	}
 
+    /**
+     * Load configuration parameters, using defaults if necessary
+     */
 	@EventHandler
 	public void configLoad(FMLPreInitializationEvent event) {
 		Configuration config = new Configuration(event.getSuggestedConfigurationFile());
-		pathWay = GameData.blockRegistry.getObject(config.get("general", "Ocean_villages_path", "planks", "Block used for streets of Villages built in Ocean biome").getString());
-        if(pathWay == null){
+		pathWay = GameData.blockRegistry.getObject(config.get("general", "Ocean_villages_path", "planks", "Block used for streets of villages built in Ocean biome").getString());
+        if(pathWay == Blocks.air){
             pathWay = Blocks.planks;
         }
 		villageSpawnBiomes = Arrays.asList(config.get("general", "Available_biomes", biomeNames, "Biomes where villages should be added, by biome name").getStringList());
@@ -62,6 +66,10 @@ public class BetterVillages {
 		fields = config.get("general", "Decorate_fields", fields, "Village fields should be improved").getBoolean(fields);
 		woodHut = config.get("general", "Decorate_huts", woodHut, "Village wood huts should be improved").getBoolean(woodHut);
 		gates = config.get("general", "Add_gates", gates, "Fence gates added to village fields").getBoolean(gates);
+        fieldFence = GameData.blockRegistry.getObject(config.get("general", "Villages_fields_fencing", "fence", "Block used for fencing villages fields").getString());
+        if(fieldFence == Blocks.air){
+            fieldFence = Blocks.fence;
+        }
 		torch = config.get("general", "Add_new_torch", torch, "Better torch has a chance to appear in villages").getBoolean(torch);
 		big = config.get("general", "Bigger_Villages", big, "Villages generates in clusters").getBoolean(big);
 		if (config.hasChanged())
@@ -78,6 +86,10 @@ public class BetterVillages {
         }
 	}
 
+    /**
+     * Add village to biome
+     * Register event listeners, village handler, new torch component
+     */
 	@EventHandler
 	public void load(FMLInitializationEvent event) {
 		if (villageSpawnBiomes != null && !villageSpawnBiomes.isEmpty()) {
@@ -87,9 +99,9 @@ public class BetterVillages {
 				}
 			}
 		}
-		MinecraftForge.EVENT_BUS.register(this);
+		MinecraftForge.EVENT_BUS.register(this);//For the populating event
         if (villageSpawnBiomes.contains(BiomeGenBase.ocean.biomeName)|| villageSpawnBiomes.contains(BiomeGenBase.deepOcean.biomeName)){
-		    MinecraftForge.TERRAIN_GEN_BUS.register(this);
+		    MinecraftForge.TERRAIN_GEN_BUS.register(this);//For the pathway replacement
         }
 		if (torch) {
             MapGenStructureIO.func_143031_a(ComponentBetterVillageTorch.class, "BViT");
@@ -102,13 +114,17 @@ public class BetterVillages {
 		}
 	}
 
+    /**
+     * Listen to the populating event, decorates stuff in villages
+     * @param event The populating event
+     */
 	@SubscribeEvent
-	public void onPopulating(Post event) {
+	public void onPopulating(net.minecraftforge.event.terraingen.PopulateChunkEvent.Post event) {
 		if (event.hasVillageGenerated) {
 			int i = event.chunkX * 16;
 			int k = event.chunkZ * 16;
 			BiomeGenBase biome = event.world.getBiomeGenForCoords(i, k);
-			Block borderId = biome == BiomeGenBase.desert ? Blocks.sandstone : Blocks.log;
+			Block borderId = BiomeDictionary.isBiomeOfType(biome, BiomeDictionary.Type.DESERT) ? Blocks.sandstone : Blocks.log;
 			int y, p;
             Block id;
 			int[] field;
@@ -119,9 +135,9 @@ public class BetterVillages {
 						y = event.world.getTopSolidOrLiquidBlock(x, z) - 1;//ignores water
 						id = event.world.getBlock(x, y, z);
 						if (id == Blocks.wool && event.world.getBlock(x-1, y-1, z) == Blocks.torch && event.world.getBlock(x+1, y-1, z) == Blocks.torch && event.world.getBlock(x, y-1, z-1) == Blocks.torch && event.world.getBlock(x, y-1, z+1) == Blocks.torch) {
-							//Definetly a torch
+							//Definitely a common village torch
                             if (isReplaceable(event.world, x, y - 4, z))
-								event.world.setBlock(x, y - 4, z, pathWay);
+								event.world.setBlock(x, y - 4, z, pathWay);//Add support below
 							continue;
 						}
 						if (id == Blocks.oak_stairs) {
@@ -130,13 +146,13 @@ public class BetterVillages {
 							} while (event.world.isAirBlock(x, y, z) || isWaterId(event.world.getBlock(x, y, z)));
 							id = event.world.getBlock(x, y, z);
 						}
-						if (id == FLAG_ID) {//Use flag
+						if (id == FLAG_ID) {//found flag
 							id = event.world.getBlock(x, y + 1, z);
-							if (isWaterId(id)) {
+							if (isWaterId(id)) {//underwater
 								event.world.setBlock(x, y, z, id, 0, 2);//destroy flag
 								while (!event.world.isAirBlock(x, y, z))
 									y++;
-								event.world.setBlock(x, y, z, pathWay);//rebuilt pathway
+								event.world.setBlock(x, y, z, pathWay);//rebuilt pathway on top of water
 							}
 							continue;
 						}
@@ -204,7 +220,6 @@ public class BetterVillages {
 									break;
 								}
 							}
-							list = null;
 							continue;
 						}
 						if (wells && id == Blocks.cobblestone) {//found cobblestone in open air
@@ -256,14 +271,25 @@ public class BetterVillages {
 		}
 	}
 
+    /**
+     * Listen to the village block id event, replaces gravel by a flag in ocean biome to reconstruct the pathway
+     * @param event The village block id event
+     */
 	@SubscribeEvent
 	public void onSettingGravel(net.minecraftforge.event.terraingen.BiomeEvent.GetVillageBlockID event) {
-		if ((event.biome == BiomeGenBase.ocean || event.biome == BiomeGenBase.deepOcean) && event.original == Blocks.gravel) {
+		if (event.biome instanceof BiomeGenOcean && event.original == Blocks.gravel) {
 			event.replacement = FLAG_ID;//flag used to reconstruct pathway afterward
 			event.setResult(Result.DENY);
 		}
 	}
 
+    /**
+     *
+     * @param world The world containing the blocks
+     * @param id The block searched
+     * @param field The coordinates of the center to search around
+     * @return A list of coordinates that contain the same block, around the center, at the same height
+     */
 	private static List<int[]> getBorder(World world, Block id, int[] field) {
 		List<int[]> list = new ArrayList<int[]>();
 		for (int x = field[0] - 1; x < field[0] + 2; x++) {
@@ -275,6 +301,14 @@ public class BetterVillages {
 		return list;
 	}
 
+    /**
+     * Roughly estimates if a center block is cornered by blocks of the given type,
+     * actually searching for two unaligned border blocks
+     * @param world The world containing the blocks
+     * @param id The block searched
+     * @param pos The coordinates of the center to search around
+     * @return true if the center block is cornered by the block type
+     */
 	private static boolean isCorner(World world, Block id, int[] pos) {
 		List<int[]> list = getBorder(world, id, pos);
 		if (list.size() < 2)
@@ -284,10 +318,19 @@ public class BetterVillages {
 		return a[0] != b[0] && a[2] != b[2];
 	}
 
+    /**
+     * Wrapper method to identify replaceable blocks
+     * @return true if the position is replaceable by any block
+     */
 	private static boolean isReplaceable(World world, int x, int y, int z) {
-		return world.isAirBlock(x, y, z) || world.getBlock(x, y, z).isReplaceable(world, x, y, z);
+		return world.getBlock(x, y, z).isReplaceable(world, x, y, z);
 	}
 
+    /**
+     * Wrapper method to identify water type blocks
+     * @param id The block to compare
+     * @return true if the block material is water
+     */
 	private static boolean isWaterId(Block id) {
 		return id.getMaterial() == Material.water;
 	}
