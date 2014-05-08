@@ -2,6 +2,7 @@ package bettervillages;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 
 import cpw.mods.fml.common.FMLCommonHandler;
@@ -33,11 +34,10 @@ public class BetterVillages {
 	public static final Block FLAG_ID = Blocks.planks;
 	public static Block pathWay, fieldFence;
 	public static boolean lilies = true, fields = true, gates = true, wells = true, woodHut = true, torch = true, big = true;
-	public static String[] biomeNames = new String[] { BiomeGenBase.desertHills.biomeName, BiomeGenBase.extremeHills.biomeName, BiomeGenBase.extremeHillsEdge.biomeName, BiomeGenBase.jungle.biomeName,
-			BiomeGenBase.jungleHills.biomeName, BiomeGenBase.ocean.biomeName, BiomeGenBase.swampland.biomeName, BiomeGenBase.taiga.biomeName, BiomeGenBase.taigaHills.biomeName,
-			BiomeGenBase.icePlains.biomeName, BiomeGenBase.iceMountains.biomeName, BiomeGenBase.forest.biomeName };
-	public static List<String> villageSpawnBiomes;
-	public static List<IVillageCreationHandler> handlers = new ArrayList<IVillageCreationHandler>();
+	public static String biomeNames = "DesertHills,Extreme Hills,Extreme Hills Edge,Jungle,JungleHills,Ocean,Swampland,Taiga,TaigaHills,Ice Plains,Ice Mountains,Forest";
+	public static HashSet<String> villageSpawnBiomes;
+    public static HashSet<BiomeDictionary.Type> villageSpawnTypes;
+    public static List<IVillageCreationHandler> handlers = new ArrayList<IVillageCreationHandler>();
 	static {
 		handlers.add(new VillageCreationHandler(StructureVillagePieces.House4Garden.class, 4, 2, 4, 2));
 		handlers.add(new VillageCreationHandler(StructureVillagePieces.Church.class, 20, 0, 1, 1));
@@ -58,9 +58,17 @@ public class BetterVillages {
 		Configuration config = new Configuration(event.getSuggestedConfigurationFile());
 		pathWay = GameData.blockRegistry.getObject(config.get("general", "Ocean_villages_path", "planks", "Block used for streets of villages built in Ocean biome").getString());
         if(pathWay == Blocks.air){
-            pathWay = Blocks.planks;
+            pathWay = FLAG_ID;
         }
-		villageSpawnBiomes = Arrays.asList(config.get("general", "Available_biomes", biomeNames, "Biomes where villages should be added, by biome name").getStringList());
+        StringBuilder build = new StringBuilder("Available biome tags are: ");
+        for (BiomeDictionary.Type t : BiomeDictionary.Type.values()) {
+            build.append(t);
+            build.append(",");
+        }
+        config.addCustomCategoryComment("general", build.toString());
+        parseBiome(config.get("General", "Available_biomes", biomeNames,
+                "Biomes where villages should be added, use ALL or * for all biomes, select with biome name or biome tags, prefix with - to exclude")
+                .getString().split(","));
 		lilies = config.get("general", "Spawn_waterlily", lilies, "Water lilies can be found on water in villages").getBoolean(lilies);
 		wells = config.get("general", "Decorate_wells", wells, "Village wells should be improved").getBoolean(wells);
 		fields = config.get("general", "Decorate_fields", fields, "Village fields should be improved").getBoolean(fields);
@@ -86,6 +94,49 @@ public class BetterVillages {
         }
 	}
 
+    public void parseBiome(String[] ID){
+        villageSpawnBiomes = new HashSet<String>();
+        villageSpawnTypes = new HashSet<BiomeDictionary.Type>();
+        for (String txt : ID) {
+            if (txt.startsWith("-")) {
+                txt = txt.substring(1).trim();
+                try {
+                    villageSpawnTypes.remove(BiomeDictionary.Type.valueOf(txt.toUpperCase()));
+                } catch (IllegalArgumentException l) {
+                    villageSpawnBiomes.remove(txt);
+                }
+            } else {
+                if (txt.equals("*") || txt.equalsIgnoreCase("ALL")) {
+                    for (BiomeGenBase biome: BiomeGenBase.getBiomeGenArray()) {
+                        villageSpawnBiomes.add(biome.biomeName);
+                    }
+                    for (BiomeDictionary.Type t : BiomeDictionary.Type.values()) {
+                        villageSpawnTypes.add(t);
+                    }
+                } else {
+                    try {
+                        BiomeDictionary.Type type = BiomeDictionary.Type.valueOf(txt.toUpperCase());
+                        villageSpawnTypes.add(type);
+                        for (BiomeGenBase biome : BiomeDictionary.getBiomesForType(type)) {
+                            villageSpawnBiomes.add(biome.biomeName);
+                        }
+                    } catch (IllegalArgumentException l) {
+                        for(BiomeGenBase biome: BiomeGenBase.getBiomeGenArray()){
+                            if(biome!=null && biome.biomeName.equals(txt)){
+                                villageSpawnBiomes.add(txt);
+                                BiomeDictionary.Type[] types = BiomeDictionary.getTypesForBiome(biome);
+                                if(types!=null)
+                                    for(BiomeDictionary.Type type:types){
+                                        villageSpawnTypes.add(type);
+                                    }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     /**
      * Add village to biome
      * Register event listeners, village handler, new torch component
@@ -94,7 +145,7 @@ public class BetterVillages {
 	public void load(FMLInitializationEvent event) {
 		if (villageSpawnBiomes != null && !villageSpawnBiomes.isEmpty()) {
 			for (BiomeGenBase biome : BiomeGenBase.getBiomeGenArray()) {
-				if (biome != null && villageSpawnBiomes.contains(biome.biomeName)) {
+				if (biome != null && villageSpawnBiomes.contains(biome.biomeName) && villageSpawnTypes.containsAll(Arrays.asList(BiomeDictionary.getTypesForBiome(biome)))) {
 					BiomeManager.addVillageBiome(biome, true);//boolean has no effect ?
 				}
 			}
@@ -131,7 +182,7 @@ public class BetterVillages {
 			List<int[]> list;
 			for (int x = i; x < i + 16; x++) {
 				for (int z = k; z < k + 16; z++) {//Search within chunk
-					if (biome == BiomeGenBase.ocean || biome == BiomeGenBase.deepOcean) {
+					if (biome instanceof BiomeGenOcean) {
 						y = event.world.getTopSolidOrLiquidBlock(x, z) - 1;//ignores water
 						id = event.world.getBlock(x, y, z);
 						if (id == Blocks.wool && event.world.getBlock(x-1, y-1, z) == Blocks.torch && event.world.getBlock(x+1, y-1, z) == Blocks.torch && event.world.getBlock(x, y-1, z-1) == Blocks.torch && event.world.getBlock(x, y-1, z+1) == Blocks.torch) {
