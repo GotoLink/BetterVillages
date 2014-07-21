@@ -28,8 +28,9 @@ import cpw.mods.fml.common.event.FMLInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.common.registry.VillagerRegistry;
 import cpw.mods.fml.common.registry.VillagerRegistry.IVillageCreationHandler;
+import net.minecraftforge.event.terraingen.BiomeEvent;
 
-@Mod(modid = "bettervillages", name = "Better Villages Mod", useMetadata = true)
+@Mod(modid = "bettervillages", name = "Better Villages Mod", useMetadata = true, acceptableRemoteVersions = "*")
 public class BetterVillages {
 	public static final Block FLAG_ID = Blocks.planks;
 	public static Block pathWay, fieldFence;
@@ -56,7 +57,7 @@ public class BetterVillages {
 	@EventHandler
 	public void configLoad(FMLPreInitializationEvent event) {
 		Configuration config = new Configuration(event.getSuggestedConfigurationFile());
-		pathWay = GameData.blockRegistry.getObject(config.get("general", "Ocean_villages_path", "planks", "Block used for streets of villages built in Ocean biome").getString());
+		pathWay = GameData.getBlockRegistry().getObject(config.get("general", "Ocean_villages_path", "planks", "Block used for streets of villages built in Ocean biome").getString());
         if(pathWay == Blocks.air){
             pathWay = FLAG_ID;
         }
@@ -74,7 +75,7 @@ public class BetterVillages {
 		fields = config.get("general", "Decorate_fields", fields, "Village fields should be improved").getBoolean(fields);
 		woodHut = config.get("general", "Decorate_huts", woodHut, "Village wood huts should be improved").getBoolean(woodHut);
 		gates = config.get("general", "Add_gates", gates, "Fence gates added to village fields").getBoolean(gates);
-        fieldFence = GameData.blockRegistry.getObject(config.get("general", "Villages_fields_fencing", "fence", "Block used for fencing villages fields").getString());
+        fieldFence = GameData.getBlockRegistry().getObject(config.get("general", "Villages_fields_fencing", "fence", "Block used for fencing villages fields").getString());
         if(fieldFence == Blocks.air){
             fieldFence = Blocks.fence;
         }
@@ -174,14 +175,13 @@ public class BetterVillages {
 		if (event.hasVillageGenerated) {
 			int i = event.chunkX * 16;
 			int k = event.chunkZ * 16;
-			BiomeGenBase biome = event.world.getBiomeGenForCoords(i, k);
-			Block borderId = BiomeDictionary.isBiomeOfType(biome, BiomeDictionary.Type.DESERT) ? Blocks.sandstone : Blocks.log;
 			int y, p;
             Block id;
 			int[] field;
 			List<int[]> list;
 			for (int x = i; x < i + 16; x++) {
 				for (int z = k; z < k + 16; z++) {//Search within chunk
+                    BiomeGenBase biome = event.world.getBiomeGenForCoords(x, z);
 					if (biome instanceof BiomeGenOcean) {
 						y = event.world.getTopSolidOrLiquidBlock(x, z) - 1;//ignores water
 						id = event.world.getBlock(x, y, z);
@@ -210,6 +210,13 @@ public class BetterVillages {
 					}
 					y = event.world.getHeightValue(x, z);//block on top of a "solid" block
 					if (y > 1) {
+                        Block borderId = Blocks.log;
+                        BiomeEvent.GetVillageBlockID getBlock = new BiomeEvent.GetVillageBlockID(biome, borderId, 0);
+                        MinecraftForge.TERRAIN_GEN_BUS.post(getBlock);
+                        if (event.getResult() == Result.DENY)
+                            borderId = getBlock.replacement;
+                        else if(BiomeDictionary.isBiomeOfType(biome, BiomeDictionary.Type.DESERT))
+                            borderId = Blocks.sandstone;
 						y--;
 						id = event.world.getBlock(x, y, z);
 						while (id.isAir(event.world, x, y, z) || id.isLeaves(event.world, x, y, z)) {
