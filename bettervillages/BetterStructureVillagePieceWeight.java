@@ -11,12 +11,12 @@ public class BetterStructureVillagePieceWeight extends StructureVillagePieces.Pi
 	}
 
 	@Override
-	public boolean canSpawnMoreVillagePiecesOfType(int par1) {
-		return this.villagePiecesLimit == 10 || this.villagePiecesSpawned < this.villagePiecesLimit;
+	public boolean canSpawnMoreVillagePiecesOfType(int type) {
+		return this.villagePiecesSpawned <= this.villagePiecesLimit;
 	}
 
 	@Override
 	public boolean canSpawnMoreVillagePieces() {
-		return this.villagePiecesLimit == 10 || this.villagePiecesSpawned < this.villagePiecesLimit;
+		return this.villagePiecesSpawned <= this.villagePiecesLimit;
 	}
 }

@@ -1,0 +1,8 @@
+{
+    "replaceCobble":{
+        "match":"cobblestone", "biome":"ALL,-WATER,-SANDY", "place":"stone"
+    },
+    "replaceLogInMesa":{
+        "match":"log", "biome":"Mesa", "place":"hardened_clay"
+    }
+}

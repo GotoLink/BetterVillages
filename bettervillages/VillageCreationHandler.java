@@ -21,7 +21,7 @@ public class VillageCreationHandler implements IVillageCreationHandler {
      */
 	private Class<?> piece;
     /**
-     * Values used to determine the village piece weight
+     * Values used to determine the village piece weight and limit number
      */
 	private int weight, min, max, multiplier;
     /**
