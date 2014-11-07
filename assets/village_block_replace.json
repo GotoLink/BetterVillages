@@ -1,8 +1,23 @@
 {
-    "replaceCobble":{
-        "match":"cobblestone", "biome":"ALL,-WATER,-SANDY", "place":"stone"
+    "mycelliumInMushroomBiomes":{
+        "match":"dirt", "biome":"Mushroom", "place":"mycelium"
     },
-    "replaceLogInMesa":{
+    "clayInMesa":{
         "match":"log", "biome":"Mesa", "place":"hardened_clay"
+    },
+    "spruceInTaiga":{
+        "match":"log", "biome":"Taiga,TaigaHills", "place":"log 1"
+    },
+    "birchInBirchForest":{
+        "match":"log", "biome":"Birch Forest,Birch Forest Hills", "place":"log 2"
+    },
+    "jungleInJungles":{
+        "match":"log", "biome":"Jungle", "place":"log 3"
+    },
+    "acaciaInSavanna":{
+        "match":"log", "biome":"Savanna", "place":"log2"
+    },
+    "bigOakInRoofedForest":{
+        "match":"log", "biome":"Roofed Forest", "place":"log2 1"
     }
 }

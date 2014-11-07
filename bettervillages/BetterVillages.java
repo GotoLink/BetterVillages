@@ -1,7 +1,6 @@
 package bettervillages;
 
 import java.util.*;
-import java.util.regex.Pattern;
 
 import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.ModContainer;
@@ -29,6 +28,7 @@ import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.common.registry.VillagerRegistry;
 import cpw.mods.fml.common.registry.VillagerRegistry.IVillageCreationHandler;
 import net.minecraftforge.event.terraingen.BiomeEvent;
+import net.minecraftforge.event.terraingen.PopulateChunkEvent;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 @Mod(modid = "bettervillages", name = "Better Villages Mod", acceptableRemoteVersions = "*")
@@ -36,9 +36,9 @@ public class BetterVillages {
 	public static final Block FLAG_ID = Blocks.planks;
 	public static Block pathWay, fieldFence;
 	public static boolean lilies = true, fields = true, gates = true, wells = true, woodHut = true, torch = true, big = true, replace = true;
-	public static String biomeNames = "DesertHills,Extreme Hills,Extreme Hills Edge,Jungle,JungleHills,Ocean,Swampland,Taiga,TaigaHills,Ice Plains,Ice Mountains,Forest";
+	public static final String biomeNames = "DesertHills,Extreme Hills,Extreme Hills Edge,Jungle,JungleHills,Ocean,Swampland,Taiga,TaigaHills,Ice Plains,Ice Mountains,Forest";
 	public static Biomes biomes;
-    public static List<IVillageCreationHandler> handlers = new ArrayList<IVillageCreationHandler>();
+    public static final List<IVillageCreationHandler> handlers = new ArrayList<IVillageCreationHandler>();
 	static {
 		handlers.add(new VillageCreationHandler(StructureVillagePieces.House4Garden.class, 4, 2, 4, 2));
 		handlers.add(new VillageCreationHandler(StructureVillagePieces.Church.class, 20, 0, 1, 1));
@@ -50,7 +50,6 @@ public class BetterVillages {
 		handlers.add(new VillageCreationHandler(StructureVillagePieces.House2.class, 15, 0, 1, 1));
 		handlers.add(new VillageCreationHandler(StructureVillagePieces.House3.class, 8, 0, 3, 2));
 	}
-    private static final Pattern pattern = Pattern.compile("assets/(.*)village_block_replace.json");
     private static VillageBlockReplacement replacer;
     /**
      * Load configuration parameters, using defaults if necessary
@@ -124,7 +123,7 @@ public class BetterVillages {
 			}
 		}
         if(replace){
-            replacer = new VillageBlockReplacement("bettervillages", pattern);
+            replacer = new VillageBlockReplacement("bettervillages");
         }
 	}
 
@@ -135,34 +134,35 @@ public class BetterVillages {
      * @param event The populating event
      */
 	@SubscribeEvent
-	public void onPopulating(net.minecraftforge.event.terraingen.PopulateChunkEvent.Post event) {
+	public void onPopulating(PopulateChunkEvent.Post event) {
 		if (event.hasVillageGenerated) {
-			int i = event.chunkX * 16;
-			int k = event.chunkZ * 16;
-			int y, p;
+			int i = event.chunkX * 16 + 8;//Villages are offset
+			int k = event.chunkZ * 16 + 8;
+			int y;
             Block id;
 			int[] field;
 			List<int[]> list;
+            BiomeGenBase biome = event.world.getBiomeGenForCoords(i, k);
+            Block borderId = getEquivalentVillageBlock(Blocks.log, biome);
             Block cobbleEquivalent = null;
             if (wells)
-                cobbleEquivalent = getEquivalentVillageBlock(Blocks.cobblestone, null);
+                cobbleEquivalent = getEquivalentVillageBlock(Blocks.cobblestone, null);//Wells aren't biome specific
 			for (int x = i; x < i + 16; x++) {
 				for (int z = k; z < k + 16; z++) {//Search within chunk
-                    BiomeGenBase biome = event.world.getBiomeGenForCoords(x, z);
 					if (biome instanceof BiomeGenOcean) {
 						y = event.world.getTopSolidOrLiquidBlock(x, z) - 1;//ignores water
 						id = event.world.getBlock(x, y, z);
-						if (id == Blocks.wool && hasAround(event.world, Blocks.torch, x, y-1, z)) {
+						if (id == Blocks.wool) {
 							//Definitely a common village torch
-                            if (isReplaceable(event.world, x, y - 4, z))
+                            if (hasAround(event.world, Blocks.torch, x, y-1, z) && isReplaceable(event.world, x, y - 4, z))
 								event.world.setBlock(x, y - 4, z, pathWay);//Add support below
 							continue;
 						}
 						if (id == Blocks.oak_stairs) {
 							do {
 								y--;
-							} while (event.world.isAirBlock(x, y, z) || isWaterId(event.world.getBlock(x, y, z)));
-							id = event.world.getBlock(x, y, z);
+                                id = event.world.getBlock(x, y, z);
+							} while (id.isAir(event.world, x, y, z) || isWaterId(id));
 						}
 						if (id == FLAG_ID) {//found flag
 							id = event.world.getBlock(x, y + 1, z);
@@ -183,10 +183,9 @@ public class BetterVillages {
 							y--;
 							id = event.world.getBlock(x, y, z);
 						}
-                        Block borderId = getEquivalentVillageBlock(Blocks.log, biome);
 						if (isWaterId(id)) {//found water in open air
 							if (lilies && event.world.isAirBlock(x, y + 1, z) && event.rand.nextInt(10) == 0)
-								event.world.setBlock(x, y + 1, z, Blocks.waterlily, 0, 2);//place waterlily randomly
+								event.world.setBlock(x, y + 1, z, Blocks.waterlily);//place waterlily randomly
 							if (gates) {
 								field = new int[] { x, y, z };
 								list = getBorder(event.world, id, field);
@@ -196,14 +195,14 @@ public class BetterVillages {
 										field = list.get(1);//get middle border block
 										if (isReplaceable(event.world, field[0], field[1] + 1, field[2])) {
 											//find orientation for fence gate
-											p = 0;//south
+											int p = 0;//south
 											if (x - field[0] < 0)
 												p = 1;//west
 											else if (x - field[0] > 0)
 												p = 3;//east
 											else if (z - field[2] < 0)
 												p = 2;//north
-											event.world.setBlock(field[0], field[1] + 1, field[2], Blocks.fence_gate, p, 2);//place fence gate
+											event.world.setBlock(field[0], field[1] + 1, field[2], Blocks.fence_gate, p, 3);//place fence gate
 										}
 									}
 								}
@@ -218,20 +217,20 @@ public class BetterVillages {
 								case 3://simple border case
 									field = list.get(1);//get middle border block
 									if (isReplaceable(event.world, field[0], field[1] + 1, field[2]))
-										event.world.setBlock(field[0], field[1] + 1, field[2], fieldFence, 0, 2);//place fence
+										event.world.setBlock(field[0], field[1] + 1, field[2], fieldFence);//place fence on top
 									break;
 								case 5://corner case
 									field = list.remove(1);
 									if (isReplaceable(event.world, field[0], field[1] + 1, field[2]))
-										event.world.setBlock(field[0], field[1] + 1, field[2], fieldFence, 0, 2);
+										event.world.setBlock(field[0], field[1] + 1, field[2], fieldFence);
 									field = list.remove(2);
 									if (isReplaceable(event.world, field[0], field[1] + 1, field[2]))
-										event.world.setBlock(field[0], field[1] + 1, field[2], fieldFence, 0, 2);
+										event.world.setBlock(field[0], field[1] + 1, field[2], fieldFence);
 									for (int[] pos : list) {
 										if (isReplaceable(event.world, pos[0], pos[1] + 1, pos[2])) {
-											event.world.setBlock(pos[0], pos[1] + 1, pos[2], fieldFence, 0, 2);
+											event.world.setBlock(pos[0], pos[1] + 1, pos[2], fieldFence);
 											if (isReplaceable(event.world, pos[0], pos[1] + 2, pos[2]) && isCorner(event.world, borderId, pos))
-												event.world.setBlock(pos[0], pos[1] + 2, pos[2], Blocks.torch, 0, 2);
+												event.world.setBlock(pos[0], pos[1] + 2, pos[2], Blocks.torch);
 										}
 									}
 									break;
@@ -251,12 +250,12 @@ public class BetterVillages {
                                     list = getBorder(event.world, cobbleEquivalent, field);
                                     if (list.size() == 5) {//found 5 cobblestone surrounding one water block, assuming this is a village well
                                         field = list.remove(1);
-                                        event.world.setBlock(field[0], field[1] + 1, field[2], Blocks.stone_slab, 0, 2);
+                                        event.world.setBlock(field[0], field[1] + 1, field[2], Blocks.stone_slab);
                                         field = list.remove(2);
-                                        event.world.setBlock(field[0], field[1] + 1, field[2], Blocks.stone_slab, 0, 2);
+                                        event.world.setBlock(field[0], field[1] + 1, field[2], Blocks.stone_slab);
                                         for (int[] pos : list) {
                                             for (int[] posb : getBorder(event.world, Blocks.gravel, pos))
-                                                event.world.setBlock(posb[0], posb[1], posb[2], Blocks.stone_slab, 0, 2);
+                                                event.world.setBlock(posb[0], posb[1], posb[2], Blocks.stone_slab);
                                         }
                                         while (event.world.getBlock(x, y, z) == id) {
                                             y--;
@@ -264,8 +263,8 @@ public class BetterVillages {
                                         field = new int[]{x, y, z};
                                         list = getBorder(event.world, cobbleEquivalent, field);
                                         for (int[] pos : list)
-                                            event.world.setBlock(pos[0], pos[1], pos[2], Blocks.iron_block, 0, 2);
-                                        event.world.setBlock(field[0], field[1], field[2], Blocks.iron_block, 0, 2);
+                                            event.world.setBlock(pos[0], pos[1], pos[2], Blocks.iron_block);
+                                        event.world.setBlock(field[0], field[1], field[2], Blocks.iron_block);
                                     }
                                 }
                             }
@@ -280,7 +279,7 @@ public class BetterVillages {
 								event.world.setBlock(x, y, z, borderId);
 								list = getBorder(event.world, Blocks.cobblestone, new int[] { x, y, z });
 								for (int[] pos : list) {
-									event.world.setBlock(pos[0], pos[1], pos[2], Blocks.stone, 0, 2);
+									event.world.setBlock(pos[0], pos[1], pos[2], Blocks.stone);
 								}
 							}
 						}
@@ -327,7 +326,7 @@ public class BetterVillages {
      * @param event The village block id event
      */
 	@SubscribeEvent(priority = EventPriority.LOWEST)
-	public void onSettingVillageBlock(net.minecraftforge.event.terraingen.BiomeEvent.GetVillageBlockID event) {
+	public void onSettingVillageBlock(BiomeEvent.GetVillageBlockID event) {
 		if (event.biome instanceof BiomeGenOcean && event.original == Blocks.gravel) {
 			event.replacement = FLAG_ID;//flag used to reconstruct pathway afterward
 			event.setResult(Result.DENY);
@@ -336,7 +335,6 @@ public class BetterVillages {
             if(temp != null){
                 event.replacement = temp.block;
                 event.setResult(Result.DENY);
-                System.out.println("Replaced " + event.original.getUnlocalizedName().substring(5) + " by " + event.replacement.getUnlocalizedName().substring(5) +(event.biome!=null?" in " +event.biome.biomeName : "") );
             }
         }
 	}
@@ -358,7 +356,6 @@ public class BetterVillages {
                 if(i!=event.type){
                     event.replacement = i;
                     event.setResult(Result.DENY);
-                    System.out.println("Replaced " + event.original.getUnlocalizedName().substring(5) + " by " + event.replacement +(event.biome!=null?" in " +event.biome.biomeName : "") );
                 }
             }
         }
