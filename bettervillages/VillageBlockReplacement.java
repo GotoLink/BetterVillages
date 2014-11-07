@@ -5,7 +5,6 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.Iterators;
 import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
-import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.registry.GameData;
 import net.minecraft.block.Block;
 import net.minecraft.init.Blocks;
@@ -20,65 +19,27 @@ import java.lang.reflect.Type;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 /**
  * Created by GotoLink on 02/11/2014.
  * Loads a json readable file for the replacement module
  */
-public class VillageBlockReplacement {
+public class VillageBlockReplacement extends FileParser{
     private static final Gson gson = new GsonBuilder().registerTypeAdapter(BlockReplace.class, new BlockReplace.Deserializer()).create();
     private static final Type mapType = new TypeToken<Map<String, BlockReplace>>() { }.getType();
     private static final String ANY_BIOME = "ALL";
-    private final HashMap<BlockPlace, BlockAndMeta> replacements = new HashMap<BlockPlace, BlockAndMeta>();
+    private HashMap<BlockPlace, BlockAndMeta> replacements;
 
-    public VillageBlockReplacement(Object mod, Pattern pattern){
-        try {
-            final File source = FMLCommonHandler.instance().findContainerFor(mod).getSource();
-            if(source.isDirectory()){
-                searchDir(source, pattern, "");
-            }else{
-                ZipFile zf = new ZipFile(source);
-                for (ZipEntry ze : Collections.list(zf.entries()))
-                {
-                    Matcher matcher = pattern.matcher(ze.getName());
-                    if (matcher.matches())
-                    {
-                        parse(zf.getInputStream(ze));
-                    }
-                }
-                zf.close();
-            }
-        }catch (Exception stuffGoneWrong){
-            stuffGoneWrong.printStackTrace();
-        }
+    public VillageBlockReplacement(Object mod){
+        super(mod, Pattern.compile("assets/(.*)village_block_replace.json"));
     }
 
-    /**
-     * Helper to find and parse a file within file path
-     */
-    private void searchDir(File source, Pattern pattern, String path) throws IOException{
-        for (File file : source.listFiles())
-        {
-            String currPath = path+file.getName();
-            if (file.isDirectory())
-            {
-                searchDir(file, pattern, currPath + '/');
-            }
-            Matcher matcher = pattern.matcher(currPath);
-            if (matcher.matches())
-            {
-                parse(new FileInputStream(file));
-            }
-        }
-    }
-
-    private void parse(InputStream inputStream){
-        Reader reader = new InputStreamReader(new BufferedInputStream(inputStream));
+    @Override
+    protected void parse(Reader reader){
         Map<String, BlockReplace> tempMap = gson.fromJson(reader, mapType);
+        replacements = new HashMap<BlockPlace, BlockAndMeta>();
         for(BlockReplace entry : tempMap.values()){
-            if(entry.blockStart.block!=Blocks.air){
+            if(entry!=null && entry.blockStart.block!=Blocks.air){
                 replacements.put(entry.asPlace(), entry.toPlace);
             }
         }
