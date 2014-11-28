@@ -1,17 +1,17 @@
 package bettervillages;
 
-import java.util.List;
-import java.util.Random;
-
 import net.minecraft.init.Blocks;
 import net.minecraft.world.World;
 import net.minecraft.world.gen.structure.StructureBoundingBox;
 import net.minecraft.world.gen.structure.StructureVillagePieces;
 
+import java.util.List;
+import java.util.Random;
+
 /**
  * New torch component for villages, using nether brick fences and glowstone blocks
  */
-public class ComponentBetterVillageTorch extends StructureVillagePieces.Torch {
+public final class ComponentBetterVillageTorch extends StructureVillagePieces.Torch {
 	public ComponentBetterVillageTorch() {
         super();
 	}

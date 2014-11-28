@@ -5,7 +5,7 @@ import net.minecraft.world.gen.structure.StructureVillagePieces;
 /**
  * Modified version of village pieces weight to make for bigger villages
  */
-public class BetterStructureVillagePieceWeight extends StructureVillagePieces.PieceWeight {
+public final class BetterStructureVillagePieceWeight extends StructureVillagePieces.PieceWeight {
 	public BetterStructureVillagePieceWeight(Class<?> par1Class, int par2, int par3) {
 		super(par1Class, par2, par3);
 	}

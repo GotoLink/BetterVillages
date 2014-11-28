@@ -5,26 +5,23 @@ import com.google.common.base.Predicate;
 import com.google.common.collect.Iterators;
 import com.google.gson.*;
 import com.google.gson.reflect.TypeToken;
-import cpw.mods.fml.common.registry.GameData;
 import net.minecraft.block.Block;
 import net.minecraft.init.Blocks;
 import net.minecraft.util.JsonUtils;
 import net.minecraft.world.biome.BiomeGenBase;
-import net.minecraftforge.common.BiomeDictionary;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
-import java.io.*;
-import java.lang.reflect.ParameterizedType;
+import java.io.Reader;
 import java.lang.reflect.Type;
-import java.util.*;
-import java.util.regex.Matcher;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 /**
  * Created by GotoLink on 02/11/2014.
  * Loads a json readable file for the replacement module
  */
-public class VillageBlockReplacement extends FileParser{
+public final class VillageBlockReplacement extends FileParser{
     private static final Gson gson = new GsonBuilder().registerTypeAdapter(BlockReplace.class, new BlockReplace.Deserializer()).create();
     private static final Type mapType = new TypeToken<Map<String, BlockReplace>>() { }.getType();
     private static final String ANY_BIOME = "ALL";
