@@ -29,6 +29,7 @@ import net.minecraftforge.event.terraingen.BiomeEvent;
 import net.minecraftforge.event.terraingen.PopulateChunkEvent;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 @Mod(modid = "bettervillages", name = "Better Villages Mod", acceptableRemoteVersions = "*")
@@ -50,6 +51,7 @@ public final class BetterVillages {
 		handlers.add(new VillageCreationHandler(StructureVillagePieces.House2.class, 15, 0, 1, 1));
 		handlers.add(new VillageCreationHandler(StructureVillagePieces.House3.class, 8, 0, 3, 2));
 	}
+	public static final HashSet<Integer> globalDimensionBlacklist = new HashSet<Integer>();
     private static VillageBlockReplacement replacer;
     /**
      * Load configuration parameters, using defaults if necessary
@@ -67,9 +69,40 @@ public final class BetterVillages {
             build.append(",");
         }
         config.addCustomCategoryComment("general", build.toString());
-        biomes = new Biomes(config.get("General", "Available_biomes", biomeNames,
+        biomes = new Biomes(config.get("general", "Available_biomes", biomeNames,
                 "Biomes where villages should be added, use ALL or * for all biomes, select with biome name or biome tags, prefix with - to exclude")
                 .getString().split(","));
+		String[] blackList = config.getString("Dimension blacklist", "general", "-1,1", "Prevent all village decorations steps in a world, by dimension ids. Use [id1;id2] to add a range of id, prefix with - to exclude. Doesn't apply to block replacement module.").split(",");
+		for(String text:blackList){
+			if(text!=null && !text.isEmpty()){
+				boolean done = false;
+				if(text.contains("[") && text.contains("]")){
+					String[] results = text.substring(text.indexOf("[")+1, text.indexOf("]")).split(";");
+					if(results.length==2){
+						try {
+							int a = Integer.parseInt(results[0]);
+							int b = Integer.parseInt(results[1]);
+							boolean remove = text.startsWith("-");
+							for(int x = a; x <=b; x++){
+								if(remove)
+									globalDimensionBlacklist.remove(x);
+								else
+									globalDimensionBlacklist.add(x);
+							}
+							done = true;
+						}catch (Exception ignored){
+
+						}
+					}
+				}
+				if(!done) {
+					try {
+						globalDimensionBlacklist.add(Integer.parseInt(text.trim()));
+					} catch (Exception ignored) {
+					}
+				}
+			}
+		}
 		lilies = config.getBoolean("Spawn_waterlily", "general", lilies, "Water lilies can be found on water in villages");
 		wells = config.getBoolean("Decorate_wells", "general", wells, "Village wells should be improved");
 		fields = config.getBoolean("Decorate_fields", "general", fields, "Village fields should be improved");
@@ -135,7 +168,7 @@ public final class BetterVillages {
      */
 	@SubscribeEvent
 	public void onPopulating(PopulateChunkEvent.Post event) {
-		if (event.hasVillageGenerated) {
+		if (event.hasVillageGenerated && !globalDimensionBlacklist.contains(event.world.provider.dimensionId)) {
 			int i = event.chunkX * 16 + 8;//Villages are offset
 			int k = event.chunkZ * 16 + 8;
 			int y;
