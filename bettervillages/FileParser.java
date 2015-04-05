@@ -1,6 +1,6 @@
 package bettervillages;
 
-import cpw.mods.fml.common.FMLCommonHandler;
+import net.minecraftforge.fml.common.FMLCommonHandler;
 
 import java.io.*;
 import java.util.Collections;
@@ -14,24 +14,22 @@ import java.util.zip.ZipFile;
  * Loads a file following the {@code Pattern}, within the {@code ModContainer} source
  */
 public abstract class FileParser {
-    public FileParser(Object mod, Pattern pattern){
+    public FileParser(Object mod, Pattern pattern) {
         try {
             final File source = FMLCommonHandler.instance().findContainerFor(mod).getSource();
-            if(source.isDirectory()){
+            if (source.isDirectory()) {
                 searchDir(source, pattern, "");
-            }else{
+            } else {
                 ZipFile zf = new ZipFile(source);
-                for (ZipEntry ze : Collections.list(zf.entries()))
-                {
+                for (ZipEntry ze : Collections.list(zf.entries())) {
                     Matcher matcher = pattern.matcher(ze.getName());
-                    if (matcher.matches())
-                    {
+                    if (matcher.matches()) {
                         parse(zf.getInputStream(ze));
                     }
                 }
                 zf.close();
             }
-        }catch (Exception stuffGoneWrong){
+        } catch (Exception stuffGoneWrong) {
             stuffGoneWrong.printStackTrace();
         }
     }
@@ -40,16 +38,13 @@ public abstract class FileParser {
      * Helper to find and parse a file within file path
      */
     private void searchDir(File source, Pattern pattern, String path) throws IOException {
-        for (File file : source.listFiles())
-        {
-            String currPath = path+file.getName();
-            if (file.isDirectory())
-            {
+        for (File file : source.listFiles()) {
+            String currPath = path + file.getName();
+            if (file.isDirectory()) {
                 searchDir(file, pattern, currPath + '/');
             }
             Matcher matcher = pattern.matcher(currPath);
-            if (matcher.matches())
-            {
+            if (matcher.matches()) {
                 parse(new FileInputStream(file));
             }
         }
@@ -57,9 +52,10 @@ public abstract class FileParser {
 
     /**
      * The delegating parsing method
+     *
      * @param inputStream
      */
-    private void parse(InputStream inputStream){
+    private void parse(InputStream inputStream) {
         parse(new InputStreamReader(new BufferedInputStream(inputStream)));
     }
 

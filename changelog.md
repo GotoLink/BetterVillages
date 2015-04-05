@@ -1,3 +1,7 @@
+== Better Villages Mod 0.5 (1.8) ==
+* Updated for 1.8
+* Made field fencing block option search for corresponding fence gate
+
 == Better Villages Mod 0.4 (1.7.10) ==
 * Added replacement block module (customizable through json file)
 * Changed some village blocks according to biomes (using replacement block module)

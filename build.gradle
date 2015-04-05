@@ -18,10 +18,11 @@ apply plugin: 'forge'
 sourceCompatibility = 1.6
 targetCompatibility = 1.6
 minecraft {
-    version = "1.7.10-10.13.2.1230"
+    version = "1.8-11.14.1.1350"
     runDir = "eclipse"
+    mappings = "snapshot_20150401"
 }
-version = "0.4"
+version = "0.5"
 archivesBaseName = project.projectDir.name
 sourceSets.main.java{srcDirs project.projectDir.getPath() include("bettervillages/**")}
 sourceSets.main.resources{srcDirs project.projectDir.getPath() include("assets/**", "mcmod.info", "pack.mcmeta")}
