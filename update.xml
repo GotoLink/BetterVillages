@@ -1,4 +1,11 @@
 <mod modid="bettervillages">
+    <mcVersion version="1.8">
+        <release type="release" version="0.5"
+                 url="http://www.minecraftforum.net/topic/1651891-/#Villages"
+                 download="http://www.mediafire.com/download/l3ekw01ew3asn4n/BetterVillages-0.5(1.8).jar"
+                 md5="0721795414740CFAD787D2FCE8264D8A"
+                />
+    </mcVersion>
     <mcVersion version="1.7.10">
         <release type="release" version="0.4"
                  url="http://www.minecraftforum.net/topic/1651891-/#Villages"

@@ -35,7 +35,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
-@Mod(modid = "bettervillages", name = "Better Villages Mod")
+@Mod(modid = "bettervillages", name = "Better Villages Mod", acceptableRemoteVersions = "*")
 public final class BetterVillages {
     private static final Block FLAG_ID = Blocks.planks;
     private Block pathWay, fieldFence, fieldGate;
