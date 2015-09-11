@@ -18,7 +18,7 @@ apply plugin: 'forge'
 sourceCompatibility = 1.6
 targetCompatibility = 1.6
 minecraft {
-    version = "1.8-11.14.1.1350"
+    version = "1.8-11.14.3.1450"
     runDir = "eclipse"
     mappings = "snapshot_20150401"
 }
@@ -38,7 +38,7 @@ processResources {
     }
     // copy everything else, thats not mcmod.info
     from(project.sourceSets.main.resources.srcDirs) {
-        include("pack.mcmeta")
+        include("assets/**", "pack.mcmeta")
     }
 }
 jar {

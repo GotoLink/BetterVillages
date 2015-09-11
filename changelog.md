@@ -1,6 +1,7 @@
 == Better Villages Mod 0.5 (1.8) ==
 * Updated for 1.8
 * Made field fencing block option search for corresponding fence gate
+* Made replacement block module also load json from 'server-resource-packs' folder
 
 == Better Villages Mod 0.4 (1.7.10) ==
 * Added replacement block module (customizable through json file)

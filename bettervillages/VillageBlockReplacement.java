@@ -30,7 +30,7 @@ public final class VillageBlockReplacement extends FileParser {
     private HashMap<BlockPlace, BlockAndMeta> replacements;
 
     public VillageBlockReplacement(Object mod) {
-        super(mod, Pattern.compile("assets/(.*)village_block_replace.json"));
+        super(mod, Pattern.compile("(.*)assets(.+?)village_block_replace\\.json", Pattern.CASE_INSENSITIVE));
     }
 
     @Override
