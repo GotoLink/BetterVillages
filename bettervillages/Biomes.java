@@ -4,10 +4,8 @@ import net.minecraft.world.biome.BiomeGenBase;
 import net.minecraftforge.common.BiomeDictionary;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Locale;
 
 /**
  * Created by Olivier on 02/11/2014.
@@ -27,9 +25,9 @@ public final class Biomes {
 
     private void parse(String txt) {
         if (txt.startsWith("-")) {
-            txt = txt.substring(1).trim();
+            txt = txt.substring(1);
             try {
-                biomeTypes.remove(BiomeDictionary.Type.valueOf(txt.toUpperCase(Locale.ENGLISH)));
+                biomeTypes.remove(BiomeDictionary.Type.valueOf(txt.trim()));
             } catch (IllegalArgumentException l) {
                 biomeNames.remove(txt);
             }
@@ -39,21 +37,17 @@ public final class Biomes {
                     if (biome != null)
                         biomeNames.add(biome.biomeName);
                 }
-                Collections.addAll(biomeTypes, BiomeDictionary.Type.values());
+                if(!txt.equals("*"))
+                    Collections.addAll(biomeTypes, BiomeDictionary.Type.values());
             } else {
                 try {
-                    BiomeDictionary.Type type = BiomeDictionary.Type.valueOf(txt.toUpperCase(Locale.ENGLISH));
+                    BiomeDictionary.Type type = BiomeDictionary.Type.valueOf(txt.trim());
                     biomeTypes.add(type);
-                    for (BiomeGenBase biome : BiomeDictionary.getBiomesForType(type)) {
-                        biomeNames.add(biome.biomeName);
-                    }
                 } catch (IllegalArgumentException l) {
                     for (BiomeGenBase biome : BiomeGenBase.getBiomeGenArray()) {
                         if (biome != null && biome.biomeName.equals(txt)) {
                             biomeNames.add(txt);
-                            BiomeDictionary.Type[] types = BiomeDictionary.getTypesForBiome(biome);
-                            if (types != null)
-                                Collections.addAll(biomeTypes, types);
+                            break;
                         }
                     }
                 }
@@ -62,11 +56,23 @@ public final class Biomes {
     }
 
     public boolean isEmpty() {
-        return biomeNames.isEmpty();
+        return biomeNames.isEmpty() && biomeTypes.isEmpty();
     }
 
     public boolean contains(BiomeGenBase biome) {
-        return biome != null && biomeNames.contains(biome.biomeName) && biomeTypes.containsAll(Arrays.asList(BiomeDictionary.getTypesForBiome(biome)));
+        if(biome == null)
+            return false;
+        if(biomeNames.contains(biome.biomeName))
+            return true;
+        if(isEmpty())
+            return false;
+        BiomeDictionary.Type[] types = BiomeDictionary.getTypesForBiome(biome);
+        for(BiomeDictionary.Type type : types){
+            if(biomeTypes.contains(type)){
+                return true;
+            }
+        }
+        return false;
     }
 
     public boolean hasName(String biomeName) {
@@ -77,8 +83,6 @@ public final class Biomes {
     public boolean equals(Object object) {
         if (object == this)
             return true;
-        if (object == null)
-            return false;
         return object instanceof Biomes && this.biomeNames.equals(((Biomes) object).biomeNames) && this.biomeTypes.equals(((Biomes) object).biomeTypes);
     }
 
@@ -89,6 +93,9 @@ public final class Biomes {
 
     @Override
     public String toString() {
-        return this.biomeNames.toString().replace("[", "").replace("]", "");
+        if(!biomeNames.isEmpty())
+            return this.biomeNames.toString().replace("[", "").replace("]", "");
+        else
+            return this.biomeTypes.toString().replace("[", "").replace("]", "");
     }
 }

@@ -1,21 +1,21 @@
 {
     "mycelliumInMushroomBiomes":{
-        "match":"dirt", "biome":"Mushroom", "place":"mycelium"
+        "match":"dirt", "biome":"MUSHROOM", "place":"mycelium"
     },
-    "clayInMesa":{
-        "match":"log", "biome":"Mesa", "place":"hardened_clay"
+    "clayInMesaBiomes":{
+        "match":"log", "biome":"MESA", "place":"hardened_clay"
     },
     "spruceInTaiga":{
         "match":"log", "biome":"Taiga,TaigaHills", "place":"log 1"
     },
-    "birchInBirchForest":{
+    "birchInBirchForests":{
         "match":"log", "biome":"Birch Forest,Birch Forest Hills", "place":"log 2"
     },
     "jungleInJungles":{
-        "match":"log", "biome":"Jungle", "place":"log 3"
+        "match":"log", "biome":"Jungle,JungleHills", "place":"log 3"
     },
     "acaciaInSavanna":{
-        "match":"log", "biome":"Savanna", "place":"log2"
+        "match":"log", "biome":"SAVANNA", "place":"log2"
     },
     "bigOakInRoofedForest":{
         "match":"log", "biome":"Roofed Forest", "place":"log2 1"

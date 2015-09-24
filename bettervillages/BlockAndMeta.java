@@ -99,8 +99,6 @@ public final class BlockAndMeta {
 
     @Override
     public boolean equals(Object object) {
-        if (object == null)
-            return false;
         if (object == this)
             return true;
         return object instanceof BlockAndMeta && this.block == ((BlockAndMeta) object).block && Arrays.equals(this.meta, ((BlockAndMeta) object).meta);

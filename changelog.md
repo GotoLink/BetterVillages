@@ -2,6 +2,8 @@
 * Updated for 1.8
 * Made field fencing block option search for corresponding fence gate
 * Made replacement block module also load json from 'server-resource-packs' folder
+* Changed biome parsing from file (fixed savanna/plains definition)
+* Made most village decoration blocks replaceable (lilypads, slabs, fences)
 
 == Better Villages Mod 0.4 (1.7.10) ==
 * Added replacement block module (customizable through json file)
