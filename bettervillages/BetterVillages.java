@@ -38,7 +38,8 @@ import java.util.List;
 @Mod(modid = "bettervillages", name = "Better Villages Mod", acceptableRemoteVersions = "*")
 public final class BetterVillages {
     private static final Block FLAG_ID = Blocks.planks;
-    private Block pathWay, fieldFence, fieldGate;
+    private IBlockState fieldFence;
+    private Block pathWay, fieldGate;
     private boolean lilies = true, fields = true, gates = true, wells = true, woodHut = true, torch = true, big = true, replace = true;
     private static final String biomeNames = "DesertHills,Extreme Hills,Extreme Hills Edge,Jungle,JungleHills,Ocean,Swampland,Taiga,TaigaHills,Ice Plains,Ice Mountains,Forest";
     private Biomes biomes;
@@ -70,6 +71,8 @@ public final class BetterVillages {
         }
         StringBuilder build = new StringBuilder("Available biome tags are: ");
         for (BiomeDictionary.Type t : BiomeDictionary.Type.values()) {
+            if(t == BiomeDictionary.Type.DESERT || t == BiomeDictionary.Type.FROZEN)//Deprecated
+                continue;
             build.append(t);
             build.append(",");
         }
@@ -95,7 +98,7 @@ public final class BetterVillages {
                                     globalDimensionBlacklist.add(x);
                             }
                             done = true;
-                        } catch (Exception ignored) {
+                        } catch (NumberFormatException ignored) {
 
                         }
                     }
@@ -103,7 +106,7 @@ public final class BetterVillages {
                 if (!done) {
                     try {
                         globalDimensionBlacklist.add(Integer.parseInt(text.trim()));
-                    } catch (Exception ignored) {
+                    } catch (NumberFormatException ignored) {
                     }
                 }
             }
@@ -114,11 +117,13 @@ public final class BetterVillages {
         woodHut = config.getBoolean("Decorate_huts", "general", woodHut, "Village wood huts should be improved");
         gates = config.getBoolean("Add_gates", "general", gates, "Fence gates added to village fields");
         String temp = config.get("general", "Villages_fields_fencing", "fence", "Block used for fencing villages fields").getString();
-        fieldFence = GameData.getBlockRegistry().getObject(temp);
-        if (fieldFence == GameData.getBlockRegistry().getDefaultValue())
-            fieldFence = Blocks.oak_fence;
+        if(fields) {
+            fieldFence = BlockAndMeta.fromString(temp).state();
+            if (fieldFence == null)
+                fieldFence = Blocks.oak_fence.getDefaultState();
+        }
         if (gates) {
-            fieldGate = GameData.getBlockRegistry().getObject(temp + "_gate");
+            fieldGate = GameData.getBlockRegistry().getObject(temp.split(" ")[0] + "_gate");
             if (fieldGate == GameData.getBlockRegistry().getDefaultValue())
                 fieldGate = Blocks.oak_fence_gate;
         }
@@ -153,7 +158,7 @@ public final class BetterVillages {
             }
         }
         MinecraftForge.EVENT_BUS.register(this);//For the populating event
-        if (replace || biomes.hasName(BiomeGenBase.ocean.biomeName) || biomes.hasName(BiomeGenBase.deepOcean.biomeName)) {
+        if (replace || biomes.contains(BiomeGenBase.ocean) || biomes.contains(BiomeGenBase.deepOcean)) {
             MinecraftForge.TERRAIN_GEN_BUS.register(this);//For the pathway / replacement module
         }
         if (torch) {
@@ -181,38 +186,59 @@ public final class BetterVillages {
         if (event.hasVillageGenerated && !globalDimensionBlacklist.contains(event.world.provider.getDimensionId())) {
             int i = event.chunkX * 16 + 8;//Villages are offset
             int k = event.chunkZ * 16 + 8;
-            Block id;
-            List<BlockPos> list;
             BlockPos pos = new BlockPos(i, event.world.getActualHeight()/2, k);
             BiomeGenBase biome = event.world.getBiomeGenForCoords(pos);
             IBlockState borderId = getEquivalentVillageBlock(Blocks.log.getDefaultState(), biome);
-            Block cobbleEquivalent = null;
-            if (wells)
-                cobbleEquivalent = getEquivalentVillageBlock(Blocks.cobblestone.getDefaultState(), null).getBlock();//Wells aren't biome specific
+            IBlockState cobbleEquivalent = null;
+            IBlockState slabEquivalent = null;
+            IBlockState ironEquivalent = null;
+            if (wells) {//Wells aren't biome specific
+                cobbleEquivalent = getEquivalentVillageBlock(Blocks.cobblestone.getDefaultState(), null);
+                slabEquivalent = getEquivalentVillageBlock(Blocks.stone_slab.getDefaultState().withProperty(BlockSlab.HALF, BlockSlab.EnumBlockHalf.BOTTOM), null);
+                ironEquivalent = getEquivalentVillageBlock(Blocks.iron_block.getDefaultState(), null);
+            }
+            IBlockState lilyEquivalent = null;
+            if (lilies)
+                lilyEquivalent = getEquivalentVillageBlock(Blocks.waterlily.getDefaultState(), biome);
+            IBlockState torchEquivalent = null;
+            IBlockState fenceEquivalent = null;
+            if(fields || biome instanceof BiomeGenOcean){
+                torchEquivalent = getEquivalentVillageBlock(Blocks.torch.getDefaultState(), biome);
+                fenceEquivalent = getEquivalentVillageBlock(fieldFence, biome);
+            }
+            IBlockState id;
+            List<BlockPos> list;
             for (int x = i; x < i + 16; x++) {
                 for (int z = k; z < k + 16; z++) {//Search within chunk
                     pos = new BlockPos(x, event.world.getActualHeight()/2, z);
                     if (biome instanceof BiomeGenOcean) {
                         pos = event.world.getTopSolidOrLiquidBlock(pos).down();//ignores water
-                        id = event.world.getBlockState(pos).getBlock();
-                        if (id == Blocks.wool) {
+                        id = event.world.getBlockState(pos);
+                        if (id.equals(Blocks.wool.getDefaultState()) && event.world.getBlockState(pos.down()).equals(fenceEquivalent)) {
                             //Definitely a common village torch
-                            if (hasAround(event.world, Blocks.torch, pos.down()) && isReplaceable(event.world, pos.down(4)))
+                            if (hasAround(event.world, torchEquivalent.getBlock(), pos) && isReplaceable(event.world, pos.down(4)))
                                 event.world.setBlockState(pos.down(4), pathWay.getDefaultState());//Add support below
                             continue;
                         }
-                        if (id == Blocks.oak_stairs) {
+                        if (id.getBlock() instanceof BlockStairs) {
                             do {
                                 pos = pos.down();
-                                id = event.world.getBlockState(pos).getBlock();
-                            } while (id.isAir(event.world, pos) || isWaterId(id));
+                                id = event.world.getBlockState(pos);
+                            } while (id.getBlock().isAir(event.world, pos) || isWaterId(id.getBlock()));
                         }
-                        if (id == FLAG_ID) {//found flag
-                            id = event.world.getBlockState(pos.up()).getBlock();
-                            if (isWaterId(id)) {//underwater
-                                event.world.setBlockState(pos, id.getDefaultState(), 2);//destroy flag
-                                while (!event.world.isAirBlock(pos))
-                                    pos = pos.up();
+                        if (id.getBlock() == FLAG_ID) {//found flag
+                            id = event.world.getBlockState(pos.up());
+                            if (isWaterId(id.getBlock())) {//underwater
+                                if(event.world.rand.nextInt(10) != 0) {
+                                    event.world.setBlockState(pos, id, 2);//destroy flag
+                                    while (!event.world.isAirBlock(pos))
+                                        pos = pos.up();
+                                }else{//build columns
+                                    while (!event.world.isAirBlock(pos)) {
+                                        event.world.setBlockState(pos, pathWay.getDefaultState());
+                                        pos = pos.up();
+                                    }
+                                }
                                 event.world.setBlockState(pos, pathWay.getDefaultState());//rebuilt pathway on top of water
                             }
                             continue;
@@ -221,18 +247,18 @@ public final class BetterVillages {
                     pos = event.world.getHeight(pos);//block on top of a "solid" block
                     if (pos.getY() > 1) {
                         pos = pos.down();
-                        id = event.world.getBlockState(pos).getBlock();
-                        while (id.isAir(event.world, pos) || id.isLeaves(event.world, pos)) {
+                        id = event.world.getBlockState(pos);
+                        while (id.getBlock().isAir(event.world, pos) || id.getBlock().isLeaves(event.world, pos)) {
                             pos = pos.down();
-                            id = event.world.getBlockState(pos).getBlock();
+                            id = event.world.getBlockState(pos);
                         }
-                        if (isWaterId(id)) {//found water in open air
+                        if (isWaterId(id.getBlock())) {//found water in open air
                             if (lilies && event.world.isAirBlock(pos.up()) && event.rand.nextInt(10) == 0)
-                                event.world.setBlockState(pos.up(), Blocks.waterlily.getDefaultState());//place waterlily randomly
+                                event.world.setBlockState(pos.up(), lilyEquivalent);//place waterlily randomly
                             if (gates) {
                                 list = getBorder(event.world, id, pos);
                                 if (list.size() == 1) {//found 2 water blocks
-                                    list = getBorder(event.world, borderId.getBlock(), pos);
+                                    list = getBorder(event.world, borderId, pos);
                                     if (list.size() == 3) {//found a 3 blocks border, assuming water in a village field
                                         pos = list.get(1);//get middle border block
                                         if (isReplaceable(event.world, pos.up())) {
@@ -244,34 +270,38 @@ public final class BetterVillages {
                                                 p = EnumFacing.EAST;
                                             else if (z - pos.getZ() < 0)
                                                 p = EnumFacing.NORTH;
-                                            event.world.setBlockState(pos.up(), fieldGate.getDefaultState().withProperty(BlockDirectional.FACING, p));//place fence gate
+                                            IBlockState tempState = fieldGate.getDefaultState();
+                                            try {
+                                                tempState = tempState.withProperty(BlockDirectional.FACING, p).withProperty(BlockFenceGate.OPEN, true);
+                                            }catch (IllegalArgumentException ignored){}
+                                            event.world.setBlockState(pos.up(), tempState);//place fence gate
                                         }
                                     }
                                 }
                             }
                             continue;
                         }
-                        if (fields && id == Blocks.farmland) {//found tilled field in open air, assuming this is a village field
-                            list = getBorder(event.world, borderId.getBlock(), pos);
+                        if (fields && id.getBlock() instanceof BlockFarmland) {//found tilled field in open air, assuming this is a village field
+                            list = getBorder(event.world, borderId, pos);
                             if (!list.isEmpty()) {
                                 switch (list.size()) {
                                     case 3://simple border case
                                         pos = list.get(1);//get middle border block
                                         if (isReplaceable(event.world, pos.up()))
-                                            event.world.setBlockState(pos.up(), fieldFence.getDefaultState());//place fence on top
+                                            event.world.setBlockState(pos.up(), fenceEquivalent);//place fence on top
                                         break;
                                     case 5://corner case
                                         pos = list.remove(1);
                                         if (isReplaceable(event.world, pos.up()))
-                                            event.world.setBlockState(pos.up(), fieldFence.getDefaultState());
+                                            event.world.setBlockState(pos.up(), fenceEquivalent);
                                         pos = list.remove(2);
                                         if (isReplaceable(event.world, pos.up()))
-                                            event.world.setBlockState(pos.up(), fieldFence.getDefaultState());
+                                            event.world.setBlockState(pos.up(), fenceEquivalent);
                                         for (BlockPos post : list) {
                                             if (isReplaceable(event.world, post.up())) {
-                                                event.world.setBlockState(post.up(), fieldFence.getDefaultState());
-                                                if (isReplaceable(event.world, post.up(2)) && isCorner(event.world, borderId.getBlock(), post))
-                                                    event.world.setBlockState(post.up(2), Blocks.torch.getDefaultState());
+                                                event.world.setBlockState(post.up(), fenceEquivalent);
+                                                if (isReplaceable(event.world, post.up(2)) && isCorner(event.world, borderId, post))
+                                                    event.world.setBlockState(post.up(2), torchEquivalent);
                                             }
                                         }
                                         break;
@@ -281,9 +311,9 @@ public final class BetterVillages {
                             }
                             continue;
                         }
-                        if (wells && id == cobbleEquivalent) {//found cobblestone in open air
-                            id = event.world.getBlockState(pos.down(4)).getBlock();
-                            if (isWaterId(id)) {//found water under cobblestone layer
+                        if (wells && id.equals(cobbleEquivalent)) {//found cobblestone in open air
+                            id = event.world.getBlockState(pos.down(4));
+                            if (isWaterId(id.getBlock())) {//found water under cobblestone layer
                                 pos = pos.down(4);
                                 BlockPos field = pos;
                                 list = getBorder(event.world, id, field);
@@ -291,33 +321,36 @@ public final class BetterVillages {
                                     list = getBorder(event.world, cobbleEquivalent, field);
                                     if (list.size() == 5) {//found 5 cobblestone surrounding one water block, assuming this is a village well
                                         field = list.remove(1);
-                                        event.world.setBlockState(field.up(), Blocks.stone_slab.getDefaultState().withProperty(BlockSlab.HALF, BlockSlab.EnumBlockHalf.BOTTOM));
+                                        event.world.setBlockState(field.up(), slabEquivalent);
                                         field = list.remove(2);
-                                        event.world.setBlockState(field.up(), Blocks.stone_slab.getDefaultState().withProperty(BlockSlab.HALF, BlockSlab.EnumBlockHalf.BOTTOM));
+                                        event.world.setBlockState(field.up(), slabEquivalent);
                                         for (BlockPos post : list) {
-                                            for (BlockPos posb : getBorder(event.world, Blocks.gravel, post))
-                                                event.world.setBlockState(posb, Blocks.stone_slab.getDefaultState().withProperty(BlockSlab.HALF, BlockSlab.EnumBlockHalf.BOTTOM));
+                                            for (BlockPos posb : getBorder(event.world, Blocks.gravel.getDefaultState(), post))
+                                                event.world.setBlockState(posb, slabEquivalent);
                                         }
-                                        while (event.world.getBlockState(pos) == id) {
+                                        while (event.world.getBlockState(pos).equals(id)) {
                                             pos = pos.down();
+                                        }
+                                        if(pos.getY() == field.getY()){
+                                            pos = pos.down(12);
                                         }
                                         list = getBorder(event.world, cobbleEquivalent, pos);
                                         for (BlockPos post : list)
-                                            event.world.setBlockState(post, Blocks.iron_block.getDefaultState());
-                                        event.world.setBlockState(pos, Blocks.iron_block.getDefaultState());
+                                            event.world.setBlockState(post, ironEquivalent);
+                                        event.world.setBlockState(pos, ironEquivalent);
                                     }
                                 }
                             }
                             continue;
                         }
-                        if (woodHut && id == borderId) {//Found top
+                        if (woodHut && id.equals(borderId)) {//Found top
                             do {
                                 pos = pos.down();
-                                id = event.world.getBlockState(pos).getBlock();
-                            } while (id.isAir(event.world, pos) || !id.isOpaqueCube());//not opaque
-                            if (id == Blocks.dirt) {//Found dirt floor
+                                id = event.world.getBlockState(pos);
+                            } while (id.getBlock().isAir(event.world, pos) || !id.getBlock().isOpaqueCube());//not opaque
+                            if (id.getBlock() == Blocks.dirt) {//Found dirt floor
                                 event.world.setBlockState(pos, borderId);
-                                list = getBorder(event.world, Blocks.cobblestone, pos);
+                                list = getBorder(event.world, Blocks.cobblestone.getDefaultState(), pos);
                                 for (BlockPos post : list) {
                                     event.world.setBlockState(post, Blocks.stone.getDefaultState());
                                 }
@@ -329,6 +362,13 @@ public final class BetterVillages {
         }
     }
 
+    /**
+     * The equivalent Forge hook to handle replacing village blocks
+     *
+     * @param block to replace
+     * @param biome if any
+     * @return the replaced block
+     */
     private static IBlockState getEquivalentVillageBlock(IBlockState block, BiomeGenBase biome) {
         BiomeEvent.GetVillageBlockID getBlock = new BiomeEvent.GetVillageBlockID(biome, block);
         MinecraftForge.TERRAIN_GEN_BUS.post(getBlock);
@@ -390,7 +430,7 @@ public final class BetterVillages {
      * @return true if all faces of the center are attached to the searched block
      */
     private static boolean hasAround(World world, Block id, BlockPos pos) {
-        return world.getBlockState(pos.west()) == id && world.getBlockState(pos.east()) == id && world.getBlockState(pos.north()) == id && world.getBlockState(pos.south()) == id;
+        return world.getBlockState(pos.west()).getBlock() == id && world.getBlockState(pos.east()).getBlock() == id && world.getBlockState(pos.north()).getBlock() == id && world.getBlockState(pos.south()).getBlock() == id;
     }
 
     /**
@@ -399,12 +439,12 @@ public final class BetterVillages {
      * @param field The coordinates of the center to search around
      * @return A list of coordinates that contain the same block, around the center, at the same height
      */
-    private static List<BlockPos> getBorder(World world, Block id, BlockPos field) {
+    private static List<BlockPos> getBorder(World world, IBlockState id, BlockPos field) {
         List<BlockPos> list = new ArrayList<BlockPos>();
         for (int x = field.getX() - 1; x < field.getX() + 2; x++) {
             for (int z = field.getZ() - 1; z < field.getZ() + 2; z++) {
                 BlockPos pos = new BlockPos(x, field.getY(), z);
-                if ((x != field.getX() || z != field.getZ()) && world.getBlockState(pos).getBlock() == id)
+                if ((x != field.getX() || z != field.getZ()) && world.getBlockState(pos).equals(id))
                     list.add(pos);
             }
         }
@@ -420,7 +460,7 @@ public final class BetterVillages {
      * @param pos   The coordinates of the center to search around
      * @return true if the center block is cornered by the block type
      */
-    private static boolean isCorner(World world, Block id, BlockPos pos) {
+    private static boolean isCorner(World world, IBlockState id, BlockPos pos) {
         List<BlockPos> list = getBorder(world, id, pos);
         if (list.size() < 2)
             return false;
